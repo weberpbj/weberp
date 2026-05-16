@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>weberp-bj</title>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<style>
+/* ── Reset i baza ──────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+
+/* ── Layout ────────────────────────────────────────────────────── */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.header{background:#161b22;border-bottom:1px solid #30363d;padding:0 16px;
+  display:flex;align-items:center;gap:12px;height:54px;position:sticky;top:0;z-index:100;flex-shrink:0}
+.header-brand{font-size:15px;font-weight:800;color:#e6edf3}
+.header-brand span{color:#58a6ff}
+.header-user{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:#7d8590}
+.header-user b{color:#e6edf3}
+.btn-odjava{background:transparent;border:1px solid #30363d;color:#7d8590;border-radius:6px;
+  padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+.btn-odjava:hover{border-color:#f85149;color:#f85149}
+.alarm-badge{background:#f85149;color:#fff;border-radius:50%;min-width:18px;height:18px;
+  font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+  padding:0 4px;margin-left:4px}
+
+.body{display:flex;flex:1;overflow:hidden}
+.sidebar{width:200px;background:#161b22;border-right:1px solid #30363d;
+  padding:12px 0;flex-shrink:0;overflow-y:auto}
+.nav-btn{display:block;width:100%;background:transparent;border:none;
+  border-left:3px solid transparent;color:#7d8590;padding:10px 16px;
+  text-align:left;cursor:pointer;font-family:inherit;font-size:13px;
+  transition:all .12s}
+.nav-btn:hover{background:#21262d;color:#e6edf3}
+.nav-btn.active{background:#21262d;border-left-color:#58a6ff;color:#e6edf3;font-weight:600}
+.nav-btn .nav-icon{margin-right:8px}
+
+.main{flex:1;overflow-y:auto;padding:20px}
+
+/* ── Cards ─────────────────────────────────────────────────────── */
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:700;color:#7d8590;text-transform:uppercase;
+  letter-spacing:.06em;padding-bottom:8px;margin-bottom:12px;border-bottom:1px solid #30363d}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* ── KPI ───────────────────────────────────────────────────────── */
+.kpi{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px 16px}
+.kpi-label{font-size:10px;color:#7d8590;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.kpi-val{font-size:28px;font-weight:800;line-height:1}
+.kpi-sub{font-size:11px;color:#7d8590;margin-top:4px}
+
+/* ── Tags ──────────────────────────────────────────────────────── */
+.tag{display:inline-block;border-radius:4px;padding:2px 8px;font-size:11px;
+  font-weight:600;white-space:nowrap;border:1px solid transparent}
+.tag-blue{background:#58a6ff22;color:#58a6ff;border-color:#58a6ff44}
+.tag-green{background:#3fb95022;color:#3fb950;border-color:#3fb95044}
+.tag-red{background:#f8514922;color:#f85149;border-color:#f8514944}
+.tag-yellow{background:#e3b34122;color:#e3b341;border-color:#e3b34144}
+.tag-purple{background:#bc8cff22;color:#bc8cff;border-color:#bc8cff44}
+.tag-orange{background:#ffa65722;color:#ffa657;border-color:#ffa65744}
+
+/* ── Forme ─────────────────────────────────────────────────────── */
+.form-row{display:grid;gap:12px;margin-bottom:12px}
+.form-row.col2{grid-template-columns:1fr 1fr}
+.form-row.col3{grid-template-columns:1fr 1fr 1fr}
+.form-group label{display:block;font-size:11px;font-weight:600;color:#7d8590;
+  text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+  color:#e6edf3;padding:9px 12px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#58a6ff}
+.form-group select option{background:#161b22}
+.form-group textarea{resize:vertical;min-height:80px}
+
+/* ── Gumbi ─────────────────────────────────────────────────────── */
+.btn{border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;border:1px solid transparent;transition:all .12s}
+.btn-primary{background:#1f6feb;color:#fff;border-color:#1f6feb}
+.btn-primary:hover{background:#388bfd}
+.btn-success{background:#238636;color:#fff;border-color:#238636}
+.btn-success:hover{background:#2ea043}
+.btn-danger{background:#da3633;color:#fff;border-color:#da3633}
+.btn-danger:hover{background:#f85149}
+.btn-secondary{background:#21262d;color:#e6edf3;border-color:#30363d}
+.btn-secondary:hover{border-color:#58a6ff;color:#58a6ff}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Tablica ───────────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #30363d}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:#1c2128}
+th{padding:9px 10px;text-align:left;color:#7d8590;font-weight:600;
+  font-size:11px;white-space:nowrap;border-bottom:1px solid #30363d}
+td{padding:7px 10px;border-bottom:1px solid #30363d22;vertical-align:middle}
+tr:nth-child(even) td{background:#1c212833}
+tr:hover td{background:#21262d55}
+.tbl-empty{text-align:center;color:#7d8590;font-style:italic;padding:32px}
+
+/* ── Filteri ───────────────────────────────────────────────────── */
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filter-input{background:#21262d;border:1px solid #30363d;border-radius:6px;
+  color:#e6edf3;padding:7px 12px;font-size:12px;outline:none;flex:1;min-width:180px;font-family:inherit}
+.filter-btn{background:#21262d;border:1px solid #30363d;color:#7d8590;
+  border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:inherit}
+.filter-btn.active{background:#1f3a5f;border-color:#58a6ff;color:#58a6ff;font-weight:700}
+.filters-count{font-size:12px;color:#7d8590;margin-left:auto}
+
+/* ── Modal ─────────────────────────────────────────────────────── */
+.modal-overlay{display:none;position:fixed;inset:0;background:#000000aa;
+  z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#161b22;border:1px solid #30363d;border-radius:12px;
+  padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;position:relative}
+.modal-title{font-size:16px;font-weight:700;color:#e6edf3;margin-bottom:20px}
+.modal-close{position:absolute;top:14px;right:14px;background:#21262d;
+  border:1px solid #30363d;color:#7d8590;border-radius:6px;padding:4px 10px;cursor:pointer}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid #30363d}
+
+/* ── Bar ───────────────────────────────────────────────────────── */
+.bar-wrap{margin-bottom:10px}
+.bar-header{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.bar-track{background:#21262d;border-radius:4px;height:8px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s}
+
+/* ── Kalendar ──────────────────────────────────────────────────── */
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px}
+.cal-dow-cell{text-align:center;font-size:10px;font-weight:700;color:#7d8590;
+  padding:4px;text-transform:uppercase}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-cell{background:#161b22;border:1px solid #30363d;border-radius:6px;
+  min-height:120px;padding:6px;cursor:pointer;transition:border-color .12s;overflow:hidden}
+.cal-cell:hover{border-color:#58a6ff}
+.cal-cell.today{border-color:#e3b341}
+.cal-cell.empty{background:transparent;border-color:transparent;cursor:default}
+.cal-cell.weekend{opacity:.6}
+.cal-num{font-size:13px;font-weight:700;margin-bottom:4px}
+.cal-stats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.cal-stat{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600}
+.cal-events{display:flex;flex-direction:column;gap:2px}
+.cal-ev{font-size:9px;padding:2px 5px;border-radius:3px;border-left:2px solid;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-ev.dostava{background:#58a6ff18;border-color:#58a6ff;color:#79c0ff}
+.cal-ev.prijenos{background:#bc8cff18;border-color:#bc8cff;color:#bc8cff}
+.cal-ev.akcija{background:#ffa65718;border-color:#ffa657;color:#ffa657}
+.cal-ev.plan{background:#3fb95018;border-color:#3fb950;color:#3fb950;font-style:italic}
+
+/* ── Vozač ─────────────────────────────────────────────────────── */
+.vozac-card{background:#161b22;border:1px solid #30363d;border-radius:10px;
+  padding:16px;margin-bottom:12px}
+.vozac-kupac{font-size:16px;font-weight:700;color:#e6edf3;margin-bottom:4px}
+.vozac-info{font-size:12px;color:#7d8590;margin-bottom:10px}
+.vozac-art{font-size:12px;color:#79c0ff;margin-bottom:12px}
+.vozac-btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── Toast notifikacije ────────────────────────────────────────── */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:999;
+  display:flex;flex-direction:column;gap:8px}
+.toast{background:#161b22;border:1px solid #30363d;border-radius:8px;
+  padding:12px 16px;font-size:13px;animation:fadeIn .2s;min-width:240px;max-width:360px}
+.toast.success{border-color:#3fb950;color:#3fb950}
+.toast.error{border-color:#f85149;color:#f85149}
+.toast.info{border-color:#58a6ff;color:#58a6ff}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Loading ───────────────────────────────────────────────────── */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #30363d;
+  border-top-color:#58a6ff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{position:absolute;inset:0;background:#0d111799;
+  display:flex;align-items:center;justify-content:center;border-radius:8px;z-index:10}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .sidebar.open{display:block;position:fixed;inset:0;z-index:150;width:200px}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .form-row.col2,.form-row.col3{grid-template-columns:1fr}
+  .cal-grid,.cal-dow{grid-template-columns:repeat(7,minmax(90px,1fr));overflow-x:auto}
+  .main{padding:12px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- HEADER -->
+  <header class="header">
+    <button id="menu-toggle" style="background:none;border:none;color:#7d8590;font-size:20px;cursor:pointer;display:none" onclick="toggleSidebar()">☰</button>
+    <div class="header-brand">🚛 <span>weberp</span>-bj</div>
+    <div class="header-user">
+      <span id="header-user-info"></span>
+      <button class="btn-odjava" onclick="AUTH.odjava()">Odjava</button>
+    </div>
+  </header>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main" id="main-content">
+      <div style="display:flex;align-items:center;justify-content:center;height:200px">
+        <div class="spinner"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- MODAL CONTAINER -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// INICIJALIZACIJA
+// ═══════════════════════════════════════════════════════════════════
+let currentView = null;
+let appState = { sifrarnici: null, alarmi_count: 0 };
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!AUTH.provjeriPristup()) return;
+
+  const user = AUTH.getUser();
+  document.getElementById('header-user-info').innerHTML =
+    `<b>${user.IME_PREZIME || user.USERNAME}</b> &nbsp;·&nbsp; ${ulogaLabel(user.ULOGA)}`;
+
+  // Mobilni menu toggle
+  if (window.innerWidth <= 768) {
+    document.getElementById('menu-toggle').style.display = 'block';
+  }
+
+  // Sidebar
+  renderSidebar();
+
+  // Učitaj šifrarnike
+  await loadSifrarnici();
+
+  // Učitaj broj alarma
+  await loadAlarmCount();
+
+  // Prikaži prvu dostupnu podmapa
+  const podmape = AUTH.vidljivePodmape();
+  if (podmape.length > 0) showView(podmape[0].id);
+});
+
+function ulogaLabel(uloga) {
+  const labels = {
+    superuser: '🔑 Superuser', admin_priprema: '📋 Admin Priprema',
+    admin_maticni: '📦 Admin Matični', admin_proizvodnja: '🏭 Admin Proizvodnja',
+    uprava: '👔 Uprava', prodaja: '📈 Prodaja',
+    korisnik_proizvodnja: '🏭 Proizvodnja', vozac: '🚛 Vozač', ldc_skladiste: '🏪 LDC Skladište'
+  };
+  return labels[uloga] || uloga;
+}
+
+async function loadSifrarnici() {
+  const res = await API.getSifrarnici();
+  if (res.ok) appState.sifrarnici = res.data;
+}
+
+async function loadAlarmCount() {
+  if (!AUTH.imaOvlast('alarmi')) return;
+  const res = await API.getAlarmi('Otvoren');
+  if (res.ok) {
+    appState.alarmi_count = res.total || 0;
+    renderSidebar(); // re-render s badgeom
+  }
+}
+
+function renderSidebar() {
+  const podmape = AUTH.vidljivePodmape();
+  const sidebar = document.getElementById('sidebar');
+  sidebar.innerHTML = podmape.map(p => {
+    const badge = p.id === 'alarmi' && appState.alarmi_count > 0
+      ? `<span class="alarm-badge">${appState.alarmi_count}</span>` : '';
+    return `<button class="nav-btn ${currentView === p.id ? 'active' : ''}"
+      onclick="showView('${p.id}');closeSidebar()">
+      <span class="nav-icon">${p.icon}</span>${p.label}${badge}
+    </button>`;
+  }).join('');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ROUTER
+// ═══════════════════════════════════════════════════════════════════
+async function showView(id) {
+  currentView = id;
+  renderSidebar();
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:20px">
+    <div class="spinner"></div> <span style="color:#7d8590">Učitavanje...</span></div>`;
+
+  try {
+    switch(id) {
+      case 'dashboard':    await renderDashboard(); break;
+      case 'kalendar':     await renderKalendar(); break;
+      case 'priprema':     await renderPriprema(); break;
+      case 'vozac':        await renderVozac(); break;
+      case 'plan_proizv':  await renderPlanProizvodnje(); break;
+      case 'plan_prodaje': await renderPlanProdaje(); break;
+      case 'alarmi':       await renderAlarmi(); break;
+      case 'maticni':      await renderMaticni(); break;
+      case 'korisnici':    await renderKorisnici(); break;
+      case 'postavke':     renderPostavke(); break;
+      default: main.innerHTML = '<div class="card">Podmapa u pripremi.</div>';
+    }
+  } catch(e) {
+    main.innerHTML = `<div class="card" style="color:#f85149">Greška: ${e.message}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════════
+async function renderDashboard() {
+  const res = await API.getDashboard();
+  const main = document.getElementById('main-content');
+  if (!res.ok) { main.innerHTML = err(res.error); return; }
+  const d = res.data;
+
+  main.innerHTML = `
+  <div class="grid-4" style="margin-bottom:16px">
+    ${kpi('Aktivnih narudžbi', d.aktivnih_narudzbi, 'narudžbi u dostavi', '#58a6ff')}
+    ${kpi('Danas utovara', d.danasnje_dostave, 'planiranih utovara', '#79c0ff')}
+    ${kpi('Otvoreni alarmi', d.otvoreni_alarmi, 'problema s isporukom', d.otvoreni_alarmi > 0 ? '#f85149' : '#3fb950')}
+    ${kpi('Razlika tjedan', (d.plan_tjedan - d.stvarno_tjedan), 'pal. plan vs stvarno', '#e3b341')}
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Plan vs Stvarno — ovaj tjedan</div>
+      <div style="margin-bottom:10px">
+        <div class="bar-header"><span>Plan</span><span>${d.plan_tjedan} pal</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:100%;background:#58a6ff"></div></div>
+      </div>
+      <div>
+        <div class="bar-header"><span>Stvarno</span><span>${d.stvarno_tjedan} pal</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${d.plan_tjedan ? Math.round(d.stvarno_tjedan/d.plan_tjedan*100) : 0}%;background:#3fb950"></div></div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:#7d8590">
+        Zadnje osvježeno: ${new Date(d.zadnja_osvjezeno).toLocaleTimeString('hr-HR')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Brze akcije</div>
+      ${AUTH.mozePisati('narudzbe') ? `<button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="showView('priprema')">+ Nova narudžba</button>` : ''}
+      ${AUTH.mozePisati('plan') ? `<button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="showView('plan_proizv')">+ Unos plana</button>` : ''}
+      ${AUTH.mozePisati('vozac') ? `<button class="btn btn-success" style="width:100%;" onclick="showView('vozac')">🚛 Moje dostave</button>` : ''}
+      <button class="btn btn-secondary" style="width:100%;margin-top:8px" onclick="showView('kalendar')">📅 Kalendar</button>
+    </div>
+  </div>`;
+}
+
+function kpi(label, val, sub, color) {
+  return `<div class="kpi">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-val" style="color:${color}">${val ?? '—'}</div>
+    <div class="kpi-sub">${sub}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NARUDŽBE (PRIPREMA)
+// ═══════════════════════════════════════════════════════════════════
+async function renderPriprema() {
+  const res = await API.getNarudzbe({});
+  const main = document.getElementById('main-content');
+  if (!res.ok) { main.innerHTML = err(res.error); return; }
+
+  const narudzbe = res.data || [];
+  const mozePisati = AUTH.mozePisati('narudzbe');
+
+  main.innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:700">Narudžbe</div>
+    ${mozePisati ? `<button class="btn btn-primary" onclick="openNarudzbaModal()">+ Nova narudžba</button>` : ''}
+  </div>
+  <div class="filters">
+    <input class="filter-input" id="nar-search" placeholder="Pretraži kupca / br. narudžbe…" oninput="filterNarudzbe()">
+    ${['Sve','Najavljeno','U dostavi','Isporučeno','Problem'].map(s =>
+      `<button class="filter-btn ${s==='Sve'?'active':''}" onclick="setNarFilter(this,'${s}')">${s}</button>`
+    ).join('')}
+    <span class="filters-count" id="nar-count">${narudzbe.length} narudžbi</span>
+  </div>
+  <div class="tbl-wrap">
+    <table id="nar-table">
+      <thead><tr>
+        <th>Tip</th><th>Kupac</th><th>Br. narudžbe</th>
+        <th>Dostava</th><th>Utovar</th><th>Iz</th><th>U</th>
+        <th>Prijevoz</th><th>Pal</th><th>Status</th>
+        ${mozePisati ? '<th>Akcija</th>' : ''}
+      </tr></thead>
+      <tbody id="nar-tbody"></tbody>
+    </table>
+  </div>`;
+
+  window._narudzbe_all = narudzbe;
+  window._nar_filter = 'Sve';
+  renderNarTablica(narudzbe);
+}
+
+let _nar_filter = 'Sve';
+function setNarFilter(btn, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _nar_filter = filter;
+  filterNarudzbe();
+}
+
+function filterNarudzbe() {
+  const search = document.getElementById('nar-search')?.value.toLowerCase() || '';
+  let data = window._narudzbe_all || [];
+  if (_nar_filter !== 'Sve') data = data.filter(n => n.STATUS === _nar_filter);
+  if (search) data = data.filter(n =>
+    String(n.KUPAC).toLowerCase().includes(search) ||
+    String(n.BR_NARUDZBE).toLowerCase().includes(search)
+  );
+  document.getElementById('nar-count').textContent = `${data.length} narudžbi`;
+  renderNarTablica(data);
+}
+
+function renderNarTablica(data) {
+  const mozePisati = AUTH.mozePisati('narudzbe');
+  const tbody = document.getElementById('nar-tbody');
+  if (!tbody) return;
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="11" class="tbl-empty">Nema narudžbi</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(n => {
+    const tipCls = n.TIP === 'P' ? 'tag-purple' : n.TIP === 'A' ? 'tag-orange' : 'tag-blue';
+    const tipLabel = n.TIP === 'P' ? 'Prijenos' : n.TIP === 'A' ? 'Akcija' : 'Dostava';
+    const stCls = n.STATUS === 'Isporučeno' ? 'tag-green' : n.STATUS === 'Problem' ? 'tag-red' :
+      n.STATUS === 'U dostavi' ? 'tag-blue' : 'tag-yellow';
+    return `<tr>
+      <td><span class="tag ${tipCls}">${tipLabel}</span></td>
+      <td style="font-weight:600">${n.KUPAC}</td>
+      <td style="font-family:monospace;font-size:11px;color:#7d8590">${n.BR_NARUDZBE||'—'}</td>
+      <td style="color:#e3b341;font-weight:600">${fmt_datum(n.DATUM_DOSTAVE)}</td>
+      <td style="color:#7d8590">${fmt_datum(n.DATUM_UTOVARA)}</td>
+      <td>${n.IZ_SKLADISTA||'—'}</td>
+      <td style="color:${n.U_SKLADISTE?'#bc8cff':'#484f58'}">${n.U_SKLADISTE||'—'}</td>
+      <td style="color:#7d8590">${n.PRIJEVOZ||'—'}</td>
+      <td style="color:#58a6ff;font-weight:700;text-align:right">${n.BR_PALETA_UKUPNO||'—'}</td>
+      <td><span class="tag ${stCls}">${n.STATUS}</span></td>
+      ${mozePisati ? `<td><button class="btn btn-secondary btn-sm" onclick="editNarudzba(${n.ID_NARUDZBE})">Uredi</button></td>` : ''}
+    </tr>`;
+  }).join('');
+}
+
+function openNarudzbaModal(narudzba) {
+  const sif = appState.sifrarnici || {};
+  const kupci = (sif.kupci || []).map(k => `<option value="${k.NAZIV}">${k.NAZIV}</option>`).join('');
+  const prijevoznici = (sif.prijevoznici || []).map(p => `<option value="${p.NAZIV}">${p.NAZIV}</option>`).join('');
+  const skladista = (sif.skladista || []).map(s => `<option value="${s.NAZIV}">${s.NAZIV}</option>`).join('');
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da');
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">${narudzba ? 'Uredi narudžbu' : 'Nova narudžba'}</div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Kupac *</label>
+        <select id="f-kupac"><option value="">— Odaberi —</option>${kupci}</select></div>
+      <div class="form-group"><label>Tip</label>
+        <select id="f-tip">
+          <option value="D">Dostava kupcu</option>
+          <option value="P">Prijenos između skladišta</option>
+          <option value="A">Akcija / Najava</option>
+        </select></div>
+    </div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Datum dostave *</label>
+        <input type="date" id="f-datum-dostave"></div>
+      <div class="form-group"><label>Datum utovara *</label>
+        <input type="date" id="f-datum-utovara"></div>
+    </div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Iz skladišta</label>
+        <select id="f-iz"><option value="">— Odaberi —</option>${skladista}</select></div>
+      <div class="form-group"><label>U skladište (prijenos)</label>
+        <select id="f-u"><option value="">— Nije prijenos —</option>${skladista}</select></div>
+    </div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Prijevoznik</label>
+        <select id="f-prijevoz"><option value="">— Odaberi —</option>${prijevoznici}</select></div>
+      <div class="form-group"><label>Br. narudžbe</label>
+        <input type="text" id="f-br-nar" placeholder="Broj narudžbe kupca"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px"><label>Artikli (paleta)</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        ${artikli.map(a => `
+          <div style="display:flex;align-items:center;gap:6px">
+            <label style="font-size:11px;color:#e6edf3;min-width:60px;text-transform:none;letter-spacing:0">${a.KOD}</label>
+            <input type="number" id="f-art-${a.KOD.replace(/\//g,'-')}" min="0" value="0"
+              style="width:70px;text-align:right">
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="form-group"><label>Napomena</label>
+      <textarea id="f-napomena" placeholder="Slobodna napomena..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-primary" onclick="spremiNarudzbu()">Spremi narudžbu</button>
+    </div>`;
+
+  if (narudzba) {
+    document.getElementById('f-kupac').value = narudzba.KUPAC || '';
+    document.getElementById('f-tip').value = narudzba.TIP || 'D';
+    document.getElementById('f-datum-dostave').value = narudzba.DATUM_DOSTAVE || '';
+    document.getElementById('f-datum-utovara').value = narudzba.DATUM_UTOVARA || '';
+    document.getElementById('f-iz').value = narudzba.IZ_SKLADISTA || '';
+    document.getElementById('f-u').value = narudzba.U_SKLADISTE || '';
+    document.getElementById('f-prijevoz').value = narudzba.PRIJEVOZ || '';
+    document.getElementById('f-br-nar').value = narudzba.BR_NARUDZBE || '';
+    document.getElementById('f-napomena').value = narudzba.NAPOMENA || '';
+    window._edit_narudzba_id = narudzba.ID_NARUDZBE;
+  } else {
+    window._edit_narudzba_id = null;
+    const danas = new Date().toISOString().slice(0,10);
+    document.getElementById('f-datum-dostave').value = danas;
+    document.getElementById('f-datum-utovara').value = danas;
+  }
+
+  openModal();
+}
+
+async function spremiNarudzbu() {
+  const sif = appState.sifrarnici || {};
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da');
+
+  const data = {
+    KUPAC: document.getElementById('f-kupac').value,
+    TIP:   document.getElementById('f-tip').value,
+    DATUM_DOSTAVE:  document.getElementById('f-datum-dostave').value,
+    DATUM_UTOVARA:  document.getElementById('f-datum-utovara').value,
+    IZ_SKLADISTA:   document.getElementById('f-iz').value,
+    U_SKLADISTE:    document.getElementById('f-u').value,
+    PRIJEVOZ:       document.getElementById('f-prijevoz').value,
+    BR_NARUDZBE:    document.getElementById('f-br-nar').value,
+    NAPOMENA:       document.getElementById('f-napomena').value,
+  };
+
+  if (!data.KUPAC || !data.DATUM_DOSTAVE) {
+    toast('Kupac i datum dostave su obavezni!', 'error'); return;
+  }
+
+  // Artikli
+  let ukupno = 0;
+  artikli.forEach(a => {
+    const el = document.getElementById('f-art-' + a.KOD.replace(/\//g,'-'));
+    const v = parseInt(el?.value || 0);
+    data[a.KOD] = v;
+    ukupno += v;
+  });
+  data.BR_PALETA_UKUPNO = ukupno;
+
+  const res = window._edit_narudzba_id
+    ? await API.updateNarudzba({ id: window._edit_narudzba_id, ...data })
+    : await API.addNarudzba(data);
+
+  if (res.ok) {
+    toast(res.msg || 'Narudžba spremljena!', 'success');
+    closeModal();
+    await renderPriprema();
+  } else {
+    toast(res.error || 'Greška!', 'error');
+  }
+}
+
+async function editNarudzba(id) {
+  const res = await API.getNarudzbe({});
+  if (!res.ok) return;
+  const n = res.data.find(r => String(r.ID_NARUDZBE) === String(id));
+  if (n) openNarudzbaModal(n);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// KALENDAR
+// ═══════════════════════════════════════════════════════════════════
+let _cal_year = new Date().getFullYear();
+let _cal_month = new Date().getMonth() + 1;
+
+async function renderKalendar() {
+  const main = document.getElementById('main-content');
+  main.innerHTML = `
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn btn-secondary" onclick="calNav(-1)">‹</button>
+    <h2 id="cal-title" style="font-size:18px;font-weight:700;flex:1"></h2>
+    <button class="btn btn-secondary" onclick="calNav(1)">›</button>
+    <button class="btn btn-secondary" onclick="calDanas()">Danas</button>
+  </div>
+  <div class="cal-dow">
+    ${['PON','UTO','SRI','ČET','PET','SUB','NED'].map((d,i) =>
+      `<div class="cal-dow-cell" style="${i>=5?'color:#484f58':''}">${d}</div>`
+    ).join('')}
+  </div>
+  <div class="cal-grid" id="cal-grid">
+    <div style="grid-column:span 7;text-align:center;padding:40px;color:#7d8590">
+      <div class="spinner"></div>
+    </div>
+  </div>`;
+
+  await loadCalendarMonth();
+}
+
+async function loadCalendarMonth() {
+  document.getElementById('cal-title').textContent =
+    `${['','Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'][_cal_month]} ${_cal_year}`;
+
+  const res = await API.getKalendar(_cal_year, _cal_month);
+  const data = res.ok ? res.data : {};
+  const danas = new Date().toISOString().slice(0,10);
+  const grid = document.getElementById('cal-grid');
+
+  const daysInMonth = new Date(_cal_year, _cal_month, 0).getDate();
+  const firstDow = new Date(_cal_year, _cal_month-1, 1).getDay();
+  const startOffset = firstDow === 0 ? 6 : firstDow - 1;
+
+  let html = '';
+  for (let i = 0; i < startOffset; i++) html += '<div class="cal-cell empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${_cal_year}-${String(_cal_month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = new Date(_cal_year, _cal_month-1, d).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isToday = dateStr === danas;
+    const dayData = data[dateStr] || {};
+    const events = dayData.narudzbe || [];
+    const planPal = dayData.plan_pal || 0;
+
+    const maxEv = 3;
+    const visEvents = events.slice(0, maxEv);
+    const more = events.length - maxEv;
+
+    html += `<div class="cal-cell ${isWeekend?'weekend':''} ${isToday?'today':''}"
+      onclick="calDayDetail('${dateStr}', ${JSON.stringify(dayData).replace(/'/g,"&#39;")})">
+      <div class="cal-num" style="${isToday?'color:#e3b341':''}">${d}</div>
+      <div class="cal-stats">
+        ${events.length ? `<span class="cal-stat" style="background:#58a6ff22;color:#58a6ff">📦 ${events.length}</span>` : ''}
+        ${planPal ? `<span class="cal-stat" style="background:#3fb95022;color:#3fb950">🏭 ${planPal}</span>` : ''}
+      </div>
+      <div class="cal-events">
+        ${visEvents.map(e => {
+          const cls = e.tip === 'P' ? 'prijenos' : e.tip === 'A' ? 'akcija' : 'dostava';
+          return `<div class="cal-ev ${cls}">${e.kupac}</div>`;
+        }).join('')}
+        ${planPal ? `<div class="cal-ev plan">Prod: ${planPal} pal</div>` : ''}
+        ${more > 0 ? `<div style="font-size:9px;color:#7d8590">+${more} više…</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function calNav(dir) {
+  _cal_month += dir;
+  if (_cal_month > 12) { _cal_month = 1; _cal_year++; }
+  if (_cal_month < 1)  { _cal_month = 12; _cal_year--; }
+  loadCalendarMonth();
+}
+function calDanas() {
+  _cal_year = new Date().getFullYear();
+  _cal_month = new Date().getMonth() + 1;
+  loadCalendarMonth();
+}
+
+function calDayDetail(dateStr, dayData) {
+  const events = dayData.narudzbe || [];
+  const planPal = dayData.plan_pal || 0;
+  const d = new Date(dateStr);
+  const dani = ['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'];
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">${dani[d.getDay()]}, ${d.getDate()}. ${['','Siječnja','Veljače','Ožujka','Travnja','Svibnja','Lipnja','Srpnja','Kolovoza','Rujna','Listopada','Studenog','Prosinca'][d.getMonth()+1]} ${d.getFullYear()}</div>
+    <div style="display:flex;gap:16px;margin-bottom:16px">
+      <div class="kpi" style="flex:1"><div class="kpi-label">Dostava</div><div class="kpi-val" style="color:#58a6ff">${events.length}</div></div>
+      <div class="kpi" style="flex:1"><div class="kpi-label">Plan prod.</div><div class="kpi-val" style="color:#3fb950">${planPal}</div></div>
+    </div>
+    ${events.length ? events.map(e => {
+      const tipCls = e.tip === 'P' ? 'tag-purple' : e.tip === 'A' ? 'tag-orange' : 'tag-blue';
+      const tipLabel = e.tip === 'P' ? 'Prijenos' : e.tip === 'A' ? 'Akcija' : 'Dostava';
+      return `<div style="background:#21262d;border-radius:6px;padding:10px 12px;margin-bottom:8px;border-left:3px solid ${e.tip==='P'?'#bc8cff':e.tip==='A'?'#ffa657':'#58a6ff'}">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+          <span class="tag ${tipCls}">${tipLabel}</span>
+          <span style="font-weight:700">${e.kupac}</span>
+          <span style="margin-left:auto;color:#58a6ff;font-weight:700">${e.pal||0} pal</span>
+        </div>
+        <div style="font-size:11px;color:#7d8590">${e.iz||'—'} → ${e.u||e.kupac}</div>
+        <div style="font-size:11px;color:#7d8590">Prijevoz: ${e.prijevoz||'—'} | Status: ${e.status||'—'}</div>
+      </div>`;
+    }).join('') : '<div style="color:#7d8590;text-align:center;padding:20px;font-style:italic">Nema aktivnosti za ovaj dan.</div>'}
+  `;
+  openModal();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// VOZAČ SUČELJE
+// ═══════════════════════════════════════════════════════════════════
+async function renderVozac() {
+  const res = await API.getNarudzbe({});
+  const main = document.getElementById('main-content');
+  if (!res.ok) { main.innerHTML = err(res.error); return; }
+
+  const narudzbe = res.data || [];
+
+  main.innerHTML = `
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px">🚛 Moje dostave</div>
+  ${!narudzbe.length
+    ? '<div class="card" style="text-align:center;color:#7d8590;padding:40px">Nema aktivnih dostava za danas / sutra.</div>'
+    : narudzbe.map(n => `
+    <div class="vozac-card">
+      <div class="vozac-kupac">${n.KUPAC}</div>
+      <div class="vozac-info">
+        📅 Utovar: <b>${fmt_datum(n.DATUM_UTOVARA)}</b> &nbsp;·&nbsp;
+        📦 Dostava: <b>${fmt_datum(n.DATUM_DOSTAVE)}</b> &nbsp;·&nbsp;
+        🏭 Iz: <b>${n.IZ_SKLADISTA||'—'}</b>
+        ${n.U_SKLADISTE ? ` → <b>${n.U_SKLADISTE}</b>` : ''}
+      </div>
+      <div class="vozac-art">Paleta: <b>${n.BR_PALETA_UKUPNO||0}</b></div>
+      <div class="vozac-btns">
+        ${!n.VOZAC_POTVRDIO
+          ? `<button class="btn btn-primary" onclick="vozacPreuzmi(${n.ID_NARUDZBE})">✅ Potvrdi preuzimanje</button>`
+          : `<span class="tag tag-green">Preuzeto ✓</span>`
+        }
+        ${n.VOZAC_POTVRDIO && n.STATUS !== 'Isporučeno'
+          ? `<button class="btn btn-success" onclick="vozacIstovarModal(${n.ID_NARUDZBE})">📦 Istovareno</button>
+             <button class="btn btn-danger" onclick="vozacProblemModal(${n.ID_NARUDZBE})">⚠ Problem</button>`
+          : ''
+        }
+        ${n.STATUS === 'Isporučeno' ? `<span class="tag tag-green">Isporučeno ✓</span>` : ''}
+        ${n.STATUS === 'Problem' ? `<span class="tag tag-red">⚠ Problem prijavljen</span>` : ''}
+      </div>
+    </div>`).join('')}`;
+}
+
+async function vozacPreuzmi(id) {
+  const res = await API.vozacPreuzimanje(id);
+  if (res.ok) { toast('Preuzimanje potvrđeno!', 'success'); await renderVozac(); }
+  else toast(res.error, 'error');
+}
+
+function vozacIstovarModal(id) {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">📦 Potvrda istovara</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Napomena (opcionalno)</label>
+      <textarea id="istovar-napomena" placeholder="Npr. svi artikli uredni..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-success" onclick="potvrdiIstovar(${id})">Potvrdi istovar</button>
+    </div>`;
+  openModal();
+}
+
+async function potvrdiIstovar(id) {
+  const napomena = document.getElementById('istovar-napomena').value;
+  const res = await API.vozacIstovar(id, napomena);
+  if (res.ok) { toast('Istovar potvrđen!', 'success'); closeModal(); await renderVozac(); }
+  else toast(res.error, 'error');
+}
+
+function vozacProblemModal(id) {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">⚠ Prijava problema</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Opis problema *</label>
+      <textarea id="problem-opis" placeholder="Npr. 1 paleta pala, oštećena roba..." rows="4"></textarea>
+    </div>
+    <div style="background:#2d1b1b;border:1px solid #f8514933;border-radius:6px;padding:10px;font-size:12px;color:#f85149;margin-bottom:12px">
+      ⚠ Administrator će biti automatski obaviješten emailom.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-danger" onclick="prijaviProblem(${id})">Prijavi problem</button>
+    </div>`;
+  openModal();
+}
+
+async function prijaviProblem(id) {
+  const opis = document.getElementById('problem-opis').value;
+  if (!opis.trim()) { toast('Unesite opis problema!', 'error'); return; }
+  const res = await API.vozacProblem(id, opis);
+  if (res.ok) { toast('Problem prijavljen. Admin obaviješten!', 'info'); closeModal(); await renderVozac(); }
+  else toast(res.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PLAN PROIZVODNJE
+// ═══════════════════════════════════════════════════════════════════
+async function renderPlanProizvodnje() {
+  const tjedan = getISOWeek(new Date());
+  const [resPlan, resStv] = await Promise.all([
+    API.getPlan(tjedan), API.getStvarno(tjedan)
+  ]);
+  const main = document.getElementById('main-content');
+  const plan = resPlan.ok ? resPlan.data : [];
+  const stv  = resStv.ok  ? resStv.data  : [];
+  const mozePisatPlan = AUTH.mozePisati('plan');
+  const mozePisatStv  = AUTH.mozePisati('stvarno');
+
+  const sif = appState.sifrarnici || {};
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da').slice(0, 8);
+
+  main.innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div style="font-size:18px;font-weight:700">🏭 Plan proizvodnje — Tjedan ${tjedan}</div>
+    ${mozePisatPlan ? `<button class="btn btn-primary" onclick="openPlanModal()">+ Unos plana</button>` : ''}
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Dan</th><th>Datum</th>
+        ${artikli.map(a => `<th>${a.KOD}</th>`).join('')}
+        <th>Plan uk.</th><th>Stvarno</th><th>Δ</th><th>Zaključano</th>
+        ${mozePisatStv ? '<th>Unos stvarnog</th>' : ''}
+      </tr></thead>
+      <tbody>
+        ${plan.map(p => {
+          const s = stv.find(r => r.DATUM === p.DATUM) || {};
+          const dlt = (Number(p.PLAN_UKUPNO)||0) - (Number(s.STVAR_UKUPNO)||0);
+          const zaklj = p.ZAKLJUCANO === 'Da';
+          return `<tr>
+            <td style="font-weight:700">${p.DAN}</td>
+            <td style="color:#7d8590">${fmt_datum(p.DATUM)}</td>
+            ${artikli.map(a => `<td style="text-align:right">${p[a.KOD+'_PLAN']||0}</td>`).join('')}
+            <td style="color:#58a6ff;font-weight:700;text-align:right">${p.PLAN_UKUPNO||0}</td>
+            <td style="color:#3fb950;font-weight:700;text-align:right">${s.STVAR_UKUPNO||'—'}</td>
+            <td style="color:${dlt>0?'#e3b341':dlt<0?'#f85149':'#3fb950'};font-weight:700;text-align:right">
+              ${s.STVAR_UKUPNO ? (dlt > 0 ? '+'+dlt : dlt) : '—'}</td>
+            <td>${zaklj ? '<span class="tag tag-green">Da</span>' : '<span class="tag tag-yellow">Ne</span>'}</td>
+            ${mozePisatStv && !zaklj ? `<td><button class="btn btn-secondary btn-sm" onclick="openStvarnoModal('${p.DATUM}')">Unesi stvarno</button></td>` : mozePisatStv ? '<td>—</td>' : ''}
+          </tr>`;
+        }).join('')}
+        ${!plan.length ? `<tr><td colspan="20" class="tbl-empty">Nema plana za ovaj tjedan.</td></tr>` : ''}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function openPlanModal(datum) {
+  const sif = appState.sifrarnici || {};
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da');
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Unos plana proizvodnje</div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Dan</label>
+        <select id="p-dan">
+          ${['PON','UTO','SRI','ČET','PET','SUB','NED'].map(d=>`<option>${d}</option>`).join('')}
+        </select></div>
+      <div class="form-group"><label>Datum *</label>
+        <input type="date" id="p-datum" min="${new Date().toISOString().slice(0,10)}"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${artikli.map(a => `
+        <div class="form-group">
+          <label>${a.KOD}</label>
+          <input type="number" id="p-${a.KOD.replace(/\//g,'-')}" min="0" value="0">
+        </div>`).join('')}
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-primary" onclick="spremiPlan()">Spremi plan</button>
+    </div>`;
+  openModal();
+}
+
+async function spremiPlan() {
+  const sif = appState.sifrarnici || {};
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da');
+  const datum = document.getElementById('p-datum').value;
+  if (!datum) { toast('Datum je obavezan!', 'error'); return; }
+
+  const data = { DAN: document.getElementById('p-dan').value, DATUM: datum };
+  let uk = 0;
+  artikli.forEach(a => {
+    const v = parseInt(document.getElementById('p-' + a.KOD.replace(/\//g,'-'))?.value || 0);
+    data[a.KOD + '_PLAN'] = v; uk += v;
+  });
+  data.PLAN_UKUPNO = uk;
+
+  const res = await API.addPlan(data);
+  if (res.ok) { toast('Plan spremljen!', 'success'); closeModal(); await renderPlanProizvodnje(); }
+  else toast(res.error, 'error');
+}
+
+function openStvarnoModal(datum) {
+  const sif = appState.sifrarnici || {};
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da');
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Unos stvarne proizvodnje — ${fmt_datum(datum)}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${artikli.map(a => `
+        <div class="form-group"><label>${a.KOD}</label>
+          <input type="number" id="s-${a.KOD.replace(/\//g,'-')}" min="0" value="0">
+        </div>`).join('')}
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-success" onclick="spremiStvarno('${datum}')">Spremi</button>
+    </div>`;
+  openModal();
+}
+
+async function spremiStvarno(datum) {
+  const sif = appState.sifrarnici || {};
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da');
+  const data = { DATUM: datum };
+  let uk = 0;
+  artikli.forEach(a => {
+    const v = parseInt(document.getElementById('s-' + a.KOD.replace(/\//g,'-'))?.value || 0);
+    data[a.KOD + '_STVAR'] = v; uk += v;
+  });
+  data.STVAR_UKUPNO = uk;
+
+  const res = await API.addStvarno(data);
+  if (res.ok) { toast('Stvarno upisano!', 'success'); closeModal(); await renderPlanProizvodnje(); }
+  else toast(res.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ALARMI
+// ═══════════════════════════════════════════════════════════════════
+async function renderAlarmi() {
+  const res = await API.getAlarmi();
+  const main = document.getElementById('main-content');
+  if (!res.ok) { main.innerHTML = err(res.error); return; }
+  const alarmi = res.data || [];
+  const otvoreni = alarmi.filter(a => a.STATUS_ALARMA === 'Otvoren');
+
+  main.innerHTML = `
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px">
+    🔔 Alarmi ${otvoreni.length > 0 ? `<span class="alarm-badge">${otvoreni.length}</span>` : ''}
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Narudžba</th><th>Kupac</th><th>Datum</th>
+        <th>Vozač</th><th>Opis problema</th><th>Status</th><th>Akcija</th>
+      </tr></thead>
+      <tbody>
+        ${alarmi.map(a => `<tr>
+          <td>${a.ID}</td>
+          <td style="color:#7d8590">#${a.ID_NARUDZBE}</td>
+          <td style="font-weight:600">${a.KUPAC}</td>
+          <td>${fmt_datum(a.DATUM_DOSTAVE)}</td>
+          <td style="color:#7d8590">${a.VOZAC}</td>
+          <td style="max-width:200px;color:#e3b341">${a.OPIS_PROBLEMA}</td>
+          <td><span class="tag ${a.STATUS_ALARMA==='Otvoren'?'tag-red':'tag-green'}">${a.STATUS_ALARMA}</span></td>
+          <td>${a.STATUS_ALARMA === 'Otvoren'
+            ? `<button class="btn btn-success btn-sm" onclick="resolveAlarmModal(${a.ID})">Riješi</button>`
+            : `<span style="font-size:11px;color:#7d8590">${a.RIJESIO}</span>`
+          }</td>
+        </tr>`).join('')}
+        ${!alarmi.length ? `<tr><td colspan="8" class="tbl-empty">Nema alarma.</td></tr>` : ''}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function resolveAlarmModal(id) {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Rješavanje alarma #${id}</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Napomena o rješenju</label>
+      <textarea id="resolve-napomena" placeholder="Što je poduzeto..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-success" onclick="resolveAlarm(${id})">Označi riješenim</button>
+    </div>`;
+  openModal();
+}
+
+async function resolveAlarm(id) {
+  const napomena = document.getElementById('resolve-napomena').value;
+  const res = await API.resolveAlarm(id, napomena);
+  if (res.ok) {
+    toast('Alarm riješen!', 'success'); closeModal();
+    appState.alarmi_count = Math.max(0, appState.alarmi_count - 1);
+    renderSidebar();
+    await renderAlarmi();
+  } else toast(res.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MATIČNI PODACI
+// ═══════════════════════════════════════════════════════════════════
+async function renderMaticni() {
+  const res = await API.getMaticni();
+  const main = document.getElementById('main-content');
+  if (!res.ok) { main.innerHTML = err(res.error); return; }
+  const artikli = res.data || [];
+
+  main.innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:700">📦 Matični podaci — Artikli</div>
+    <button class="btn btn-primary" onclick="openArtikalModal()">+ Novi artikal</button>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Kod</th><th>Naziv</th><th>Kom/Pal</th>
+        <th>Aktivan</th><th>Datum od</th><th>Datum do</th><th>Akcija</th>
+      </tr></thead>
+      <tbody>
+        ${artikli.map(a => `<tr>
+          <td style="font-weight:700;color:#58a6ff">${a.KOD}</td>
+          <td>${a.NAZIV}</td>
+          <td style="text-align:right">${a.KOM_PO_PAL}</td>
+          <td><span class="tag ${a.AKTIVAN==='Da'?'tag-green':'tag-red'}">${a.AKTIVAN}</span></td>
+          <td style="color:#7d8590">${a.DATUM_OD||'—'}</td>
+          <td style="color:${a.DATUM_DO?'#f85149':'#7d8590'}">${a.DATUM_DO||'—'}</td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-secondary btn-sm" onclick="openArtikalModal(${JSON.stringify(a).replace(/"/g,"'")})">Uredi</button>
+            ${a.AKTIVAN==='Da' ? `<button class="btn btn-danger btn-sm" onclick="arhivirajArtikal(${a.ID})">Arhiviraj</button>` : ''}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function openArtikalModal(a) {
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">${a ? 'Uredi artikal' : 'Novi artikal'}</div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Kod *</label>
+        <input type="text" id="a-kod" value="${a?.KOD||''}" placeholder="npr. BK"></div>
+      <div class="form-group"><label>Naziv *</label>
+        <input type="text" id="a-naziv" value="${a?.NAZIV||''}" placeholder="Bijeli kruh"></div>
+    </div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Komada po paleti *</label>
+        <input type="number" id="a-kom" value="${a?.KOM_PO_PAL||576}" min="1"></div>
+      <div class="form-group"><label>Datum od</label>
+        <input type="date" id="a-od" value="${a?.DATUM_OD||new Date().toISOString().slice(0,10)}"></div>
+    </div>
+    <div class="form-group"><label>Napomena</label>
+      <input type="text" id="a-napomena" value="${a?.NAPOMENA||''}"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-primary" onclick="spremiArtikal(${a?.ID||'null'})">Spremi</button>
+    </div>`;
+  openModal();
+}
+
+async function spremiArtikal(id) {
+  const data = {
+    KOD:       document.getElementById('a-kod').value.trim(),
+    NAZIV:     document.getElementById('a-naziv').value.trim(),
+    KOM_PO_PAL: parseInt(document.getElementById('a-kom').value) || 576,
+    DATUM_OD:  document.getElementById('a-od').value,
+    NAPOMENA:  document.getElementById('a-napomena').value,
+  };
+  if (!data.KOD || !data.NAZIV) { toast('Kod i naziv su obavezni!', 'error'); return; }
+
+  const res = id ? await API.updateArtikal({ id, ...data }) : await API.addArtikal(data);
+  if (res.ok) {
+    toast(res.msg, 'success'); closeModal();
+    await loadSifrarnici();
+    await renderMaticni();
+  } else toast(res.error, 'error');
+}
+
+async function arhivirajArtikal(id) {
+  if (!confirm('Arhivirati artikal? Neće biti dostupan za nove narudžbe.')) return;
+  const datum = prompt('Datum arhiviranja (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
+  if (!datum) return;
+  const res = await API.arhivirajArtikal(id, datum);
+  if (res.ok) { toast('Artikal arhiviran!', 'info'); await loadSifrarnici(); await renderMaticni(); }
+  else toast(res.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// KORISNICI
+// ═══════════════════════════════════════════════════════════════════
+async function renderKorisnici() {
+  const res = await API.getKorisnici();
+  const main = document.getElementById('main-content');
+  if (!res.ok) { main.innerHTML = err(res.error); return; }
+  const korisnici = res.data || [];
+
+  main.innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:700">👥 Korisnici i ovlasti</div>
+    <button class="btn btn-primary" onclick="openKorisnikModal()">+ Novi korisnik</button>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Username</th><th>Ime i prezime</th><th>Uloga</th>
+        <th>Skladište</th><th>Email</th><th>Status</th><th>Zadnja prijava</th><th>Akcija</th>
+      </tr></thead>
+      <tbody>
+        ${korisnici.map(k => `<tr>
+          <td style="font-family:monospace;font-weight:600">${k.USERNAME}</td>
+          <td>${k.IME_PREZIME}</td>
+          <td><span class="tag tag-blue">${k.ULOGA}</span></td>
+          <td style="color:#7d8590">${k.SKLADISTE||'—'}</td>
+          <td style="color:#7d8590;font-size:11px">${k.EMAIL||'—'}</td>
+          <td><span class="tag ${k.AKTIVNA==='Da'?'tag-green':'tag-red'}">${k.AKTIVNA==='Da'?'Aktivan':'Neaktivan'}</span></td>
+          <td style="color:#7d8590;font-size:11px">${k.ZADNJA_PRIJAVA ? new Date(k.ZADNJA_PRIJAVA).toLocaleDateString('hr-HR') : '—'}</td>
+          <td style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="openKorisnikModal(${JSON.stringify(k).replace(/"/g,"'")})">Uredi</button>
+            <button class="btn ${k.AKTIVNA==='Da'?'btn-danger':'btn-success'} btn-sm" onclick="toggleKorisnik(${k.ID})">
+              ${k.AKTIVNA==='Da'?'Deaktiviraj':'Aktiviraj'}
+            </button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function openKorisnikModal(k) {
+  const uloge = ['superuser','admin_priprema','admin_maticni','admin_proizvodnja',
+    'uprava','prodaja','korisnik_proizvodnja','vozac','ldc_skladiste'];
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">${k ? 'Uredi korisnika' : 'Novi korisnik'}</div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Username *</label>
+        <input type="text" id="k-user" value="${k?.USERNAME||''}" ${k?'readonly':''}></div>
+      <div class="form-group"><label>${k ? 'Nova lozinka (prazno = ne mijenja)' : 'Lozinka *'}</label>
+        <input type="password" id="k-pass" placeholder="${k?'Ostavi prazno za ne mijenjati':'Min. 8 znakova'}"></div>
+    </div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Ime i prezime</label>
+        <input type="text" id="k-ime" value="${k?.IME_PREZIME||''}"></div>
+      <div class="form-group"><label>Uloga *</label>
+        <select id="k-uloga">
+          ${uloge.map(u => `<option value="${u}" ${k?.ULOGA===u?'selected':''}>${u}</option>`).join('')}
+        </select></div>
+    </div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Skladište (za vozača/LDC)</label>
+        <select id="k-sklad">
+          <option value="">— Nije vezano —</option>
+          ${(appState.sifrarnici?.skladista||[]).map(s =>
+            `<option value="${s.NAZIV}" ${k?.SKLADISTE===s.NAZIV?'selected':''}>${s.NAZIV}</option>`
+          ).join('')}
+        </select></div>
+      <div class="form-group"><label>Email (za alarme)</label>
+        <input type="email" id="k-email" value="${k?.EMAIL||''}"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-primary" onclick="spremiKorisnika(${k?.ID||'null'})">Spremi</button>
+    </div>`;
+  openModal();
+}
+
+async function spremiKorisnika(id) {
+  const data = {
+    username:    document.getElementById('k-user').value.trim(),
+    password:    document.getElementById('k-pass').value,
+    ime_prezime: document.getElementById('k-ime').value.trim(),
+    uloga:       document.getElementById('k-uloga').value,
+    skladiste:   document.getElementById('k-sklad').value,
+    email:       document.getElementById('k-email').value.trim(),
+  };
+  if (!id && !data.password) { toast('Lozinka je obavezna!', 'error'); return; }
+
+  const res = id
+    ? await API.updateKorisnik({ id, nova_lozinka: data.password||undefined, ...data })
+    : await API.addKorisnik(data);
+
+  if (res.ok) { toast(res.msg, 'success'); closeModal(); await renderKorisnici(); }
+  else toast(res.error, 'error');
+}
+
+async function toggleKorisnik(id) {
+  const res = await API.toggleKorisnik(id);
+  if (res.ok) { toast(res.msg, 'info'); await renderKorisnici(); }
+  else toast(res.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// POSTAVKE
+// ═══════════════════════════════════════════════════════════════════
+function renderPostavke() {
+  const user = AUTH.getUser();
+  document.getElementById('main-content').innerHTML = `
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px">⚙️ Postavke</div>
+  <div class="card" style="max-width:480px">
+    <div class="card-title">Promjena lozinke</div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Stara lozinka</label>
+      <input type="password" id="set-stara">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Nova lozinka</label>
+      <input type="password" id="set-nova">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Potvrdi novu lozinku</label>
+      <input type="password" id="set-nova2">
+    </div>
+    <button class="btn btn-primary" onclick="promijeniLozinku()">Promijeni lozinku</button>
+  </div>
+  <div class="card" style="max-width:480px;margin-top:16px">
+    <div class="card-title">Informacije o aplikaciji</div>
+    <div style="font-size:13px;color:#7d8590;line-height:2">
+      <div>Aplikacija: <b style="color:#e6edf3">weberp-bj v1.0</b></div>
+      <div>Korisnik: <b style="color:#e6edf3">${user?.USERNAME}</b></div>
+      <div>Uloga: <b style="color:#58a6ff">${user?.ULOGA}</b></div>
+      <div>Baza: <b style="color:#e6edf3">Google Sheets</b></div>
+    </div>
+  </div>`;
+}
+
+async function promijeniLozinku() {
+  const stara = document.getElementById('set-stara').value;
+  const nova  = document.getElementById('set-nova').value;
+  const nova2 = document.getElementById('set-nova2').value;
+  if (nova !== nova2) { toast('Nove lozinke se ne podudaraju!', 'error'); return; }
+  if (nova.length < 8) { toast('Lozinka mora imati min. 8 znakova!', 'error'); return; }
+  const res = await API.promijeniLozinku(stara, nova);
+  if (res.ok) toast('Lozinka promijenjena!', 'success');
+  else toast(res.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PLAN PRODAJE
+// ═══════════════════════════════════════════════════════════════════
+async function renderPlanProdaje() {
+  const res = await API.getPlanProdaje();
+  const main = document.getElementById('main-content');
+  const planovi = res.ok ? res.data : [];
+  const mozePisati = AUTH.mozePisati('plan_prodaje');
+
+  main.innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:700">📈 Plan prodaje</div>
+    ${mozePisati ? `<button class="btn btn-primary" onclick="openPlanProdajeModal()">+ Novi plan</button>` : ''}
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Kupac</th><th>Datum od</th><th>Datum do</th><th>Ukupno pal.</th><th>Unio</th>
+      </tr></thead>
+      <tbody>
+        ${planovi.map(p => `<tr>
+          <td style="font-weight:600">${p.KUPAC||'—'}</td>
+          <td>${fmt_datum(p.DATUM_OD)}</td>
+          <td>${fmt_datum(p.DATUM_DO)}</td>
+          <td style="color:#58a6ff;font-weight:700">${p.UKUPNO_PAL||'—'}</td>
+          <td style="color:#7d8590">${p.UNIO||'—'}</td>
+        </tr>`).join('')}
+        ${!planovi.length ? `<tr><td colspan="5" class="tbl-empty">Nema planova prodaje.</td></tr>` : ''}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function openPlanProdajeModal() {
+  const sif = appState.sifrarnici || {};
+  const kupci = (sif.kupci || []).map(k => `<option value="${k.NAZIV}">${k.NAZIV}</option>`).join('');
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da');
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Novi plan prodaje</div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Kupac *</label>
+        <select id="pp-kupac"><option value="">— Odaberi —</option>${kupci}</select></div>
+    </div>
+    <div class="form-row col2">
+      <div class="form-group"><label>Datum od *</label><input type="date" id="pp-od"></div>
+      <div class="form-group"><label>Datum do *</label><input type="date" id="pp-do"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${artikli.map(a => `
+        <div class="form-group"><label>${a.KOD}</label>
+          <input type="number" id="pp-${a.KOD.replace(/\//g,'-')}" min="0" value="0">
+        </div>`).join('')}
+    </div>
+    <div class="form-group"><label>Napomena</label>
+      <input type="text" id="pp-napomena"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
+      <button class="btn btn-primary" onclick="spremiPlanProdaje()">Spremi</button>
+    </div>`;
+  openModal();
+}
+
+async function spremiPlanProdaje() {
+  const sif = appState.sifrarnici || {};
+  const artikli = (sif.artikli || []).filter(a => a.AKTIVAN === 'Da');
+  const data = {
+    KUPAC:    document.getElementById('pp-kupac').value,
+    DATUM_OD: document.getElementById('pp-od').value,
+    DATUM_DO: document.getElementById('pp-do').value,
+    NAPOMENA: document.getElementById('pp-napomena').value,
+  };
+  if (!data.KUPAC || !data.DATUM_OD) { toast('Kupac i datum su obavezni!', 'error'); return; }
+  let uk = 0;
+  artikli.forEach(a => {
+    const v = parseInt(document.getElementById('pp-' + a.KOD.replace(/\//g,'-'))?.value || 0);
+    data[a.KOD + '_PLAN'] = v; uk += v;
+  });
+  data.UKUPNO_PAL = uk;
+  const res = await API.addPlanProdaje(data);
+  if (res.ok) { toast('Plan prodaje dodan!', 'success'); closeModal(); await renderPlanProdaje(); }
+  else toast(res.error, 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HELPER FUNKCIJE
+// ═══════════════════════════════════════════════════════════════════
+function fmt_datum(d) {
+  if (!d) return '—';
+  try {
+    const dt = new Date(d);
+    return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()}`;
+  } catch { return d; }
+}
+
+function err(msg) {
+  return `<div class="card" style="color:#f85149;border-color:#f8514944">⚠ ${msg || 'Greška'}</div>`;
+}
+
+function toast(msg, type = 'info', duration = 3500) {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = (type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ') + msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+</script>
+</body>
+</html>

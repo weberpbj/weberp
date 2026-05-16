@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>weberp-bj — Prijava</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:linear-gradient(135deg,#0d1b2a 0%,#1a3a5c 100%);
+    display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:16px;padding:40px 36px;
+    width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .logo{text-align:center;margin-bottom:32px}
+  .logo-icon{font-size:48px;display:block;margin-bottom:8px}
+  .logo-name{font-size:22px;font-weight:800;color:#e6edf3;letter-spacing:-.5px}
+  .logo-sub{font-size:12px;color:#7d8590;margin-top:2px}
+  .form-group{margin-bottom:18px}
+  label{display:block;font-size:12px;font-weight:600;color:#7d8590;
+    text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+  input{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:8px;
+    color:#e6edf3;padding:12px 14px;font-size:15px;font-family:inherit;outline:none;
+    transition:border-color .15s}
+  input:focus{border-color:#58a6ff}
+  .btn{width:100%;background:#1f6feb;border:none;border-radius:8px;color:#fff;
+    padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;
+    transition:background .15s;margin-top:8px}
+  .btn:hover{background:#388bfd}
+  .btn:active{background:#1158c7}
+  .btn:disabled{background:#21262d;color:#7d8590;cursor:not-allowed}
+  .error{background:#2d1b1b;border:1px solid #f8514933;border-radius:8px;
+    color:#f85149;padding:12px 14px;font-size:13px;margin-top:14px;display:none}
+  .loading{display:inline-block;width:16px;height:16px;border:2px solid #ffffff44;
+    border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;
+    margin-right:8px;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ver{text-align:center;font-size:11px;color:#484f58;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <span class="logo-icon">🚛</span>
+    <div class="logo-name">weberp-bj</div>
+    <div class="logo-sub">Logistički informacijski sustav</div>
+  </div>
+
+  <div class="form-group">
+    <label>Korisničko ime</label>
+    <input type="text" id="username" autocomplete="username"
+      placeholder="Unesite korisničko ime" autofocus>
+  </div>
+  <div class="form-group">
+    <label>Lozinka</label>
+    <input type="password" id="password" autocomplete="current-password"
+      placeholder="Unesite lozinku">
+  </div>
+
+  <button class="btn" id="btn-login" onclick="login()">Prijava</button>
+  <div class="error" id="error-msg"></div>
+  <div class="ver">weberp-bj v1.0 · 2026</div>
+</div>
+
+<script>
+// Konfiguracija — promijeni API_URL nakon deploya Apps Script
+const API_URL = 'https://script.google.com/macros/s/AKfycbxh6R-agYICMnbGuDcyA4eFU7OKIizFXXuVDg32BI_uzf5wuedqcFxQnTzXWUb4N7Fkmw/exec';
+
+// Ako je korisnik već prijavljen, preusmjeri
+const token = sessionStorage.getItem('weberp_token');
+if (token) window.location.href = 'app.html';
+
+// Enter tipka
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+async function login() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btn-login');
+  const err = document.getElementById('error-msg');
+
+  if (!username || !password) {
+    showError('Unesite korisničko ime i lozinku.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>Prijava...';
+  err.style.display = 'none';
+
+  try {
+    const res = await api('login', { username, password }, null);
+
+    if (res.ok) {
+      sessionStorage.setItem('weberp_token', res.token);
+      sessionStorage.setItem('weberp_user', JSON.stringify(res.user));
+      window.location.href = 'app.html';
+    } else {
+      showError(res.error || 'Greška pri prijavi.');
+    }
+  } catch (e) {
+    showError('Nije moguće spojiti se na server. Provjerite internet vezu.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Prijava';
+  }
+}
+
+async function api(action, payload, token) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, payload, token })
+  });
+  return r.json();
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>
