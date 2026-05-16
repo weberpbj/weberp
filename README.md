@@ -1,2 +1,0 @@
-# weberp
-Online erp aplikacija
