@@ -1,28 +1,37 @@
 // ═══════════════════════════════════════════════════════════════════
-// weberp-bj | api.js v1.1 | JSONP podrška za sve pozive
+// weberp-bj | js/api.js | v2.0 — JSONP za sve pozive
+// Sve komunikacije idu kroz JSONP jer GitHub Pages + Apps Script
+// ne podržava standardni CORS fetch
 // ═══════════════════════════════════════════════════════════════════
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxh6R-agYICMnbGuDcyA4eFU7OKIizFXXuVDg32BI_uzf5wuedqcFxQnTzXWUb4N7Fkmw/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbxh6R-agYICMnbGuDcyA4eFU7OKIizFXXuVDg32BI_uzf5wuedqcFxQnTzXWUb4N7Fkmw/exec';
 
-const API = {
+var API = {
 
-  // ── Interni JSONP poziv ─────────────────────────────────────────
-  call(action, payload) {
-    return new Promise((resolve, reject) => {
-      const token = sessionStorage.getItem('weberp_token');
-      const cbName = 'wbcb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-      const script = document.createElement('script');
+  // ── Interni JSONP poziv ────────────────────────────────────────
+  call: function(action, payload) {
+    return new Promise(function(resolve, reject) {
+      var token = '';
+      try { token = sessionStorage.getItem('weberp_token') || ''; } catch(e) {}
 
-      const timer = setTimeout(() => {
+      var cbName = 'wbcb' + Date.now() + Math.random().toString(36).substr(2, 4);
+      var script = document.createElement('script');
+      var done = false;
+
+      var timer = setTimeout(function() {
+        if (done) return;
+        done = true;
         cleanup();
         reject(new Error('Timeout — server ne odgovara.'));
-      }, 20000);
+      }, 25000);
 
       window[cbName] = function(data) {
-        cleanup();
+        if (done) return;
+        done = true;
         clearTimeout(timer);
-        if (!data.ok && data.error === 'Sesija istekla. Prijavite se ponovo.') {
-          sessionStorage.clear();
+        cleanup();
+        if (data && !data.ok && data.error === 'Sesija istekla. Prijavite se ponovo.') {
+          try { sessionStorage.clear(); } catch(e) {}
           window.location.href = 'index.html';
           return;
         }
@@ -30,85 +39,84 @@ const API = {
       };
 
       function cleanup() {
-        if (script.parentNode) script.parentNode.removeChild(script);
-        delete window[cbName];
+        try { if (script.parentNode) script.parentNode.removeChild(script); } catch(e) {}
+        try { delete window[cbName]; } catch(e) {}
       }
 
       script.onerror = function() {
-        cleanup();
+        if (done) return;
+        done = true;
         clearTimeout(timer);
+        cleanup();
         reject(new Error('Greška veze. Provjerite internet.'));
       };
 
-      // Enkodiramo payload kao JSON string u URL parametru
-      const params = new URLSearchParams({
-        action:   action,
-        payload:  JSON.stringify(payload || {}),
-        token:    token || '',
-        callback: cbName
-      });
+      var params = 'action=' + encodeURIComponent(action)
+        + '&payload=' + encodeURIComponent(JSON.stringify(payload || {}))
+        + '&token=' + encodeURIComponent(token)
+        + '&callback=' + cbName;
 
-      script.src = API_URL + '?' + params.toString();
+      script.src = API_URL + '?' + params;
       document.body.appendChild(script);
     });
   },
 
   // ── Auth ──────────────────────────────────────────────────────
-  async login(username, password) { return this.call('login', { username, password }); },
-  async logout()                  { return this.call('logout', {}); },
-  async getMe()                   { return this.call('getMe', {}); },
-  async promijeniLozinku(stara, nova) {
+  login: function(username, password) {
+    return this.call('login', { username: username, password: password });
+  },
+  logout: function() { return this.call('logout', {}); },
+  getMe:  function() { return this.call('getMe', {}); },
+  promijeniLozinku: function(stara, nova) {
     return this.call('promijeniLozinku', { staraLozinka: stara, novaLozinka: nova });
   },
 
   // ── Narudžbe ──────────────────────────────────────────────────
-  async getNarudzbe(filter)  { return this.call('getNarudzbe', filter || {}); },
-  async addNarudzba(data)    { return this.call('addNarudzba', data); },
-  async updateNarudzba(data) { return this.call('updateNarudzba', data); },
-  async deleteNarudzba(id)   { return this.call('deleteNarudzba', { id }); },
+  getNarudzbe:    function(f)  { return this.call('getNarudzbe', f || {}); },
+  addNarudzba:    function(d)  { return this.call('addNarudzba', d); },
+  updateNarudzba: function(d)  { return this.call('updateNarudzba', d); },
+  deleteNarudzba: function(id) { return this.call('deleteNarudzba', { id: id }); },
 
   // ── Vozač ─────────────────────────────────────────────────────
-  async vozacPreuzimanje(id) { return this.call('vozacPreuzimanje', { id }); },
-  async vozacIstovar(id, napomena, foto_url) {
-    return this.call('vozacIstovar', { id, napomena, foto_url });
+  vozacPreuzimanje: function(id) { return this.call('vozacPreuzimanje', { id: id }); },
+  vozacIstovar: function(id, napomena, foto_url) {
+    return this.call('vozacIstovar', { id: id, napomena: napomena, foto_url: foto_url });
   },
-  async vozacProblem(id, opis, foto_url) {
-    return this.call('vozacProblem', { id, opis, foto_url });
+  vozacProblem: function(id, opis, foto_url) {
+    return this.call('vozacProblem', { id: id, opis: opis, foto_url: foto_url });
   },
 
   // ── Alarmi ────────────────────────────────────────────────────
-  async getAlarmi(status)          { return this.call('getAlarmi', { status }); },
-  async resolveAlarm(id, napomena) { return this.call('resolveAlarm', { id, napomena }); },
+  getAlarmi:    function(status) { return this.call('getAlarmi', { status: status }); },
+  resolveAlarm: function(id, n)  { return this.call('resolveAlarm', { id: id, napomena: n }); },
 
   // ── Proizvodnja ───────────────────────────────────────────────
-  async getPlan(tjedan)    { return this.call('getPlan', { tjedan }); },
-  async addPlan(data)      { return this.call('addPlan', data); },
-  async updatePlan(data)   { return this.call('updatePlan', data); },
-  async getStvarno(tjedan) { return this.call('getStvarno', { tjedan }); },
-  async addStvarno(data)   { return this.call('addStvarno', data); },
+  getPlan:    function(tj) { return this.call('getPlan', { tjedan: tj }); },
+  addPlan:    function(d)  { return this.call('addPlan', d); },
+  updatePlan: function(d)  { return this.call('updatePlan', d); },
+  getStvarno: function(tj) { return this.call('getStvarno', { tjedan: tj }); },
+  addStvarno: function(d)  { return this.call('addStvarno', d); },
 
   // ── Plan prodaje ──────────────────────────────────────────────
-  async getPlanProdaje()      { return this.call('getPlanProdaje', {}); },
-  async addPlanProdaje(data)  { return this.call('addPlanProdaje', data); },
+  getPlanProdaje:  function()  { return this.call('getPlanProdaje', {}); },
+  addPlanProdaje:  function(d) { return this.call('addPlanProdaje', d); },
 
   // ── Matični ───────────────────────────────────────────────────
-  async getMaticni()                   { return this.call('getMaticni', {}); },
-  async addArtikal(data)               { return this.call('addArtikal', data); },
-  async updateArtikal(data)            { return this.call('updateArtikal', data); },
-  async arhivirajArtikal(id, datum_do) {
-    return this.call('arhivirajArtikal', { id, datum_do });
-  },
+  getMaticni:       function()       { return this.call('getMaticni', {}); },
+  addArtikal:       function(d)      { return this.call('addArtikal', d); },
+  updateArtikal:    function(d)      { return this.call('updateArtikal', d); },
+  arhivirajArtikal: function(id, dt) { return this.call('arhivirajArtikal', { id: id, datum_do: dt }); },
 
   // ── Šifarnici ─────────────────────────────────────────────────
-  async getSifrarnici() { return this.call('getSifrarnici', {}); },
+  getSifrarnici: function() { return this.call('getSifrarnici', {}); },
 
   // ── Dashboard i kalendar ──────────────────────────────────────
-  async getDashboard()                  { return this.call('getDashboard', {}); },
-  async getKalendar(godina, mjesec)     { return this.call('getKalendar', { godina, mjesec }); },
+  getDashboard: function() { return this.call('getDashboard', {}); },
+  getKalendar:  function(g, m) { return this.call('getKalendar', { godina: g, mjesec: m }); },
 
   // ── Korisnici ─────────────────────────────────────────────────
-  async getKorisnici()        { return this.call('getKorisnici', {}); },
-  async addKorisnik(data)     { return this.call('addKorisnik', data); },
-  async updateKorisnik(data)  { return this.call('updateKorisnik', data); },
-  async toggleKorisnik(id)    { return this.call('toggleKorisnik', { id }); },
+  getKorisnici:   function()  { return this.call('getKorisnici', {}); },
+  addKorisnik:    function(d) { return this.call('addKorisnik', d); },
+  updateKorisnik: function(d) { return this.call('updateKorisnik', d); },
+  toggleKorisnik: function(id){ return this.call('toggleKorisnik', { id: id }); }
 };
