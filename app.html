@@ -634,6 +634,8 @@ async function loadCalendarMonth() {
     const res = await API.getKalendar(_cal_year, _cal_month);
     if (res && res.ok) data = res.data || {};
   } catch(e) { console.log('Kalendar greška:', e); }
+  // Pohrani podatke globalno za klik na dan
+  window._calData = data;
   const danas = new Date().toISOString().slice(0,10);
   const grid = document.getElementById('cal-grid');
 
@@ -658,7 +660,7 @@ async function loadCalendarMonth() {
     const more = events.length - maxEv;
 
     html += `<div class="cal-cell ${isWeekend?'weekend':''} ${isToday?'today':''}"
-      onclick="calDayDetail('${dateStr}', ${JSON.stringify(dayData).replace(/'/g,"&#39;")})">
+      onclick="calDayDetail('${dateStr}')">
       <div class="cal-num" style="${isToday?'color:#e3b341':''}">${d}</div>
       <div class="cal-stats">
         ${events.length ? `<span class="cal-stat" style="background:#58a6ff22;color:#58a6ff">📦 ${events.length}</span>` : ''}
@@ -690,32 +692,36 @@ function calDanas() {
   loadCalendarMonth();
 }
 
-function calDayDetail(dateStr, dayData) {
-  const events = dayData.narudzbe || [];
+function calDayDetail(dateStr) {
+  const data = window._calData || {};
+  const dayData = data[dateStr] || {};
+  const events  = (dayData.narudzbe || []);
   const planPal = dayData.plan_pal || 0;
-  const d = new Date(dateStr);
+  const d = new Date(dateStr + 'T12:00:00');
   const dani = ['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'];
-
-  document.getElementById('modal-content').innerHTML = `
-    <div class="modal-title">${dani[d.getDay()]}, ${d.getDate()}. ${['','Siječnja','Veljače','Ožujka','Travnja','Svibnja','Lipnja','Srpnja','Kolovoza','Rujna','Listopada','Studenog','Prosinca'][d.getMonth()+1]} ${d.getFullYear()}</div>
-    <div style="display:flex;gap:16px;margin-bottom:16px">
-      <div class="kpi" style="flex:1"><div class="kpi-label">Dostava</div><div class="kpi-val" style="color:#58a6ff">${events.length}</div></div>
-      <div class="kpi" style="flex:1"><div class="kpi-label">Plan prod.</div><div class="kpi-val" style="color:#3fb950">${planPal}</div></div>
-    </div>
-    ${events.length ? events.map(e => {
-      const tipCls = e.tip === 'P' ? 'tag-purple' : e.tip === 'A' ? 'tag-orange' : 'tag-blue';
-      const tipLabel = e.tip === 'P' ? 'Prijenos' : e.tip === 'A' ? 'Akcija' : 'Dostava';
-      return `<div style="background:#21262d;border-radius:6px;padding:10px 12px;margin-bottom:8px;border-left:3px solid ${e.tip==='P'?'#bc8cff':e.tip==='A'?'#ffa657':'#58a6ff'}">
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
-          <span class="tag ${tipCls}">${tipLabel}</span>
-          <span style="font-weight:700">${e.kupac}</span>
-          <span style="margin-left:auto;color:#58a6ff;font-weight:700">${e.pal||0} pal</span>
-        </div>
-        <div style="font-size:11px;color:#7d8590">${e.iz||'—'} → ${e.u||e.kupac}</div>
-        <div style="font-size:11px;color:#7d8590">Prijevoz: ${e.prijevoz||'—'} | Status: ${e.status||'—'}</div>
-      </div>`;
-    }).join('') : '<div style="color:#7d8590;text-align:center;padding:20px;font-style:italic">Nema aktivnosti za ovaj dan.</div>'}
-  `;
+  const mj = ['','Siječnja','Veljače','Ožujka','Travnja','Svibnja','Lipnja','Srpnja','Kolovoza','Rujna','Listopada','Studenog','Prosinca'];
+  let evHtml = '';
+  events.forEach(function(e) {
+    const tipCls   = e.tip==='P'?'tag-purple':e.tip==='A'?'tag-orange':'tag-blue';
+    const tipLabel = e.tip==='P'?'Prijenos':e.tip==='A'?'Akcija':'Dostava';
+    const boja     = e.tip==='P'?'#bc8cff':e.tip==='A'?'#ffa657':'#58a6ff';
+    evHtml += '<div style="background:#21262d;border-radius:6px;padding:10px 12px;margin-bottom:8px;border-left:3px solid ' + boja + '">'
+      + '<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">'
+      + '<span class="tag ' + tipCls + '">' + tipLabel + '</span>'
+      + '<span style="font-weight:700">' + (e.kupac||'—') + '</span>'
+      + '<span style="margin-left:auto;color:#58a6ff;font-weight:700">' + (e.pal||0) + ' pal</span>'
+      + '</div>'
+      + '<div style="font-size:11px;color:#7d8590">' + (e.iz||'—') + ' → ' + (e.u||e.kupac||'—') + '</div>'
+      + '<div style="font-size:11px;color:#7d8590">Prijevoz: ' + (e.prijevoz||'—') + ' | Status: ' + (e.status||'—') + '</div>'
+      + '</div>';
+  });
+  if (!events.length) evHtml = '<div style="color:#7d8590;text-align:center;padding:20px;font-style:italic">Nema aktivnosti za ovaj dan.</div>';
+  document.getElementById('modal-content').innerHTML = 
+    '<div class="modal-title">' + dani[d.getDay()] + ', ' + d.getDate() + '. ' + mj[d.getMonth()+1] + ' ' + d.getFullYear() + '</div>'
+    + '<div style="display:flex;gap:16px;margin-bottom:16px">'
+    + '<div class="kpi" style="flex:1"><div class="kpi-label">Isporuke</div><div class="kpi-val" style="color:var(--blue)">' + events.length + '</div></div>'
+    + '<div class="kpi" style="flex:1"><div class="kpi-label">Plan prod.</div><div class="kpi-val" style="color:var(--green)">' + planPal + '</div></div>'
+    + '</div>' + evHtml;
   openModal();
 }
 
