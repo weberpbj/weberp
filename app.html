@@ -629,8 +629,11 @@ async function loadCalendarMonth() {
   document.getElementById('cal-title').textContent =
     `${['','Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'][_cal_month]} ${_cal_year}`;
 
-  const res = await API.getKalendar(_cal_year, _cal_month);
-  const data = res.ok ? res.data : {};
+  let data = {};
+  try {
+    const res = await API.getKalendar(_cal_year, _cal_month);
+    if (res && res.ok) data = res.data || {};
+  } catch(e) { console.log('Kalendar greška:', e); }
   const danas = new Date().toISOString().slice(0,10);
   const grid = document.getElementById('cal-grid');
 
