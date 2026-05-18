@@ -1,4 +1,4 @@
-// weberp-bj v2.0 | views_admin.js | Alarmi · Matični · Korisnici · AI Asistent · Postavke
+// weberp-bj v2.1 | views_admin.js | Alarmi · Matični · Korisnici · AI Asistent · Postavke
 
 // ═══════════════════════════════════════════════════════════════════
 // ALARMI
@@ -7,7 +7,7 @@ async function renderAlarmi() {
   const res = await API.getAlarmi();
   const main = document.getElementById('main-content');
   if (!res.ok) { main.innerHTML = err(res.error); return; }
-  const alarmi  = res.data || [];
+  const alarmi   = res.data || [];
   const otvoreni = alarmi.filter(a=>a.STATUS_ALARMA==='Otvoren').length;
   main.innerHTML = `
   <div style="font-size:17px;font-weight:800;margin-bottom:14px">
@@ -117,11 +117,11 @@ function openArtModal(a) {
 
 async function spremiArt(id) {
   const data = {
-    KOD: document.getElementById('a-kod').value.trim(),
-    NAZIV: document.getElementById('a-naziv').value.trim(),
+    KOD:        document.getElementById('a-kod').value.trim(),
+    NAZIV:      document.getElementById('a-naziv').value.trim(),
     KOM_PO_PAL: parseInt(document.getElementById('a-kom').value)||576,
-    DATUM_OD: document.getElementById('a-od').value,
-    NAPOMENA: document.getElementById('a-nap').value,
+    DATUM_OD:   document.getElementById('a-od').value,
+    NAPOMENA:   document.getElementById('a-nap').value,
   };
   if (!data.KOD||!data.NAZIV) { toast('Kod i naziv su obavezni!','error'); return; }
   const res = id ? await API.updateArtikal({id,...data}) : await API.addArtikal(data);
@@ -175,7 +175,6 @@ async function renderKorisnici() {
   </table></div>`;
 }
 
-// Sve podmape za prava
 const SVE_PODMAPE = [
   { id:'dashboard',    label:'📊 Dashboard' },
   { id:'kalendar',     label:'📅 Kalendar' },
@@ -200,7 +199,6 @@ function openKorModal(k) {
   const sklad = (sif.skladista||[]).map(s=>
     `<option value="${s.NAZIV}" ${k?.SKLADISTE===s.NAZIV?'selected':''}>${s.NAZIV}</option>`).join('');
 
-  // Parsiranje postojećih prava
   let praviPrava = {};
   if (k?.PRISTUPNA_PRAVA) {
     try { praviPrava = JSON.parse(k.PRISTUPNA_PRAVA); } catch(e) {}
@@ -264,7 +262,6 @@ function openKorModal(k) {
 
 async function spremiKor() {
   const id = window._edit_kor_id;
-  // Skupi prava
   const prava = {};
   SVE_PODMAPE.forEach(p=>{
     const r = document.getElementById('pr-'+p.id+'-r')?.checked;
@@ -275,12 +272,12 @@ async function spremiKor() {
     if (d) prava[p.id+'_delete']=true;
   });
   const data = {
-    username:    document.getElementById('k-user').value.trim(),
-    password:    document.getElementById('k-pass').value,
-    ime_prezime: document.getElementById('k-ime').value.trim(),
-    uloga:       document.getElementById('k-uloga').value,
-    skladiste:   document.getElementById('k-sklad').value,
-    email:       document.getElementById('k-email').value.trim(),
+    username:        document.getElementById('k-user').value.trim(),
+    password:        document.getElementById('k-pass').value,
+    ime_prezime:     document.getElementById('k-ime').value.trim(),
+    uloga:           document.getElementById('k-uloga').value,
+    skladiste:       document.getElementById('k-sklad').value,
+    email:           document.getElementById('k-email').value.trim(),
     pristupna_prava: Object.keys(prava).length ? prava : undefined,
   };
   if (!id && !data.password) { toast('Lozinka je obavezna!','error'); return; }
@@ -298,38 +295,43 @@ async function toggleKor(id) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// AI ASISTENT — via Apps Script backend
+// AI ASISTENT v2.1 — Claude via Apps Script backend
 // ═══════════════════════════════════════════════════════════════════
-let _ai_history = []; // { role:'user'|'assistant', content }
+let _ai_history = [];
 
 async function renderAI() {
-  const [resVer] = await Promise.all([API.getVerzije()]);
-  const main = document.getElementById('main-content');
+  const resVer = await API.getVerzije();
+  const main   = document.getElementById('main-content');
   const verzije = resVer.ok ? resVer.data : [];
-  const aktVer  = verzije.find(v=>String(v.AKTIVAN)==='Da')||verzije[0]||{};
+  const aktVer  = verzije.find(v=>String(v.AKTIVAN)==='Da') || verzije[0] || {};
 
   main.innerHTML = `
-  <div style="font-size:17px;font-weight:800;margin-bottom:12px">🤖 AI Asistent <span style="font-size:12px;font-weight:400;color:#7d8590">· Razvoj i nadogradnje</span></div>
+  <div style="font-size:17px;font-weight:800;margin-bottom:12px">🤖 AI Asistent <span style="font-size:12px;font-weight:400;color:#7d8590">· Claude · Razvoj i nadogradnje</span></div>
   <div class="g2">
     <div class="card" style="display:flex;flex-direction:column;height:480px">
-      <div class="card-title">💬 Chat — opis željene nadogradnje</div>
+      <div class="card-title">💬 Chat s Claudeom</div>
       <div class="ai-chat">
         <div class="ai-msgs" id="ai-msgs">
-          <div class="ai-b b">Pozdrav! Ovdje sam za razvoj i nadogradnje aplikacije. Opišite što trebate promijeniti ili dodati, i pripremit ću kod za implementaciju.</div>
+          <div class="ai-b b">Pozdrav! Ja sam Claude — kreator ove aplikacije. Mogu vam pomoći s razvojem novih funkcionalnosti, otklanjanjem grešaka i nadogradnjama. Što trebate?</div>
         </div>
         <div class="ai-row">
-          <textarea class="ai-in" id="ai-input" placeholder="Opišite željenu nadogradnju..." rows="2"
+          <textarea class="ai-in" id="ai-input"
+            placeholder="Opišite željenu nadogradnju ili problem..." rows="2"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiPosalji();}"></textarea>
-          <button class="btn btn-primary" onclick="aiPosalji()">Pošalji</button>
+          <button class="btn btn-primary" onclick="aiPosalji()" id="ai-send-btn">Pošalji</button>
         </div>
-        <div style="font-size:9px;color:#484f58;margin-top:4px">Enter = pošalji &nbsp;·&nbsp; Shift+Enter = novi redak</div>
+        <div style="font-size:9px;color:#484f58;margin-top:4px">
+          Enter = pošalji &nbsp;·&nbsp; Shift+Enter = novi redak &nbsp;·&nbsp;
+          <span style="color:#3fb950">● Claude Sonnet</span>
+        </div>
       </div>
     </div>
     <div>
       <div class="card" style="margin-bottom:12px">
         <div class="card-title">📁 Verzije koda</div>
         <div class="tbl-wrap"><table>
-          <thead><tr><th>Verzija</th><th>Datum</th><th>Opis</th><th>Status</th>
+          <thead><tr>
+            <th>Verzija</th><th>Datum</th><th>Opis</th><th>Status</th>
             ${AUTH.getUser()?.ULOGA==='superuser'?'<th>Akcija</th>':''}
           </tr></thead>
           <tbody>
@@ -352,7 +354,7 @@ async function renderAI() {
       </div>
       <div class="card">
         <div class="card-title">ℹ️ Aktivna verzija</div>
-        <div style="font-size:13px;color:#7d8590;line-height:2">
+        <div style="font-size:12px;color:#7d8590;line-height:2.2">
           <div>Verzija: <b style="color:#e6edf3">${aktVer.NAZIV||'—'}</b></div>
           <div>Opis: <b style="color:#e6edf3">${aktVer.OPIS||'—'}</b></div>
           <div>Datum: <b style="color:#e6edf3">${aktVer.DATUM||'—'}</b></div>
@@ -360,7 +362,8 @@ async function renderAI() {
         </div>
         ${AUTH.getUser()?.ULOGA==='superuser'?`
         <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-primary" onclick="renderAI()">🔄 Osvježi</button>
+          <button class="btn btn-secondary btn-sm" onclick="renderAI()">🔄 Osvježi</button>
+          <button class="btn btn-danger btn-sm" onclick="if(confirm('Obrisati povijest chata?')){_ai_history=[];renderAI();}">🗑 Očisti chat</button>
         </div>`:''}
       </div>
     </div>
@@ -368,10 +371,11 @@ async function renderAI() {
 
   // Obnovi povijest chata
   const msgs = document.getElementById('ai-msgs');
-  if (msgs && _ai_history.length>0) {
-    _ai_history.forEach(m=>{
+  if (msgs && _ai_history.length > 0) {
+    _ai_history.forEach(m => {
       const div = document.createElement('div');
-      div.className = 'ai-b '+(m.role==='user'?'u':'b');
+      div.className = 'ai-b ' + (m.role==='user' ? 'u' : 'b');
+      div.style.whiteSpace = 'pre-wrap';
       div.textContent = m.content;
       msgs.appendChild(div);
     });
@@ -379,58 +383,70 @@ async function renderAI() {
   }
 }
 
+// ── AI Posalji — popravljena verzija v2.1 ────────────────────────
 async function aiPosalji() {
-  const input = document.getElementById('ai-input');
-  const msgs  = document.getElementById('ai-msgs');
-  const poruka = input?.value.trim();
+  const input   = document.getElementById('ai-input');
+  const msgs    = document.getElementById('ai-msgs');
+  const sendBtn = document.getElementById('ai-send-btn');
+  const poruka  = input?.value.trim();
   if (!poruka) return;
+
   input.value = '';
 
-  // Prikaži korisnikovu poruku
+  // Korisnikova poruka
   const userDiv = document.createElement('div');
   userDiv.className = 'ai-b u';
   userDiv.textContent = poruka;
   msgs.appendChild(userDiv);
-  _ai_history.push({role:'user', content:poruka});
+  _ai_history.push({ role: 'user', content: poruka });
+
+  // Onemogući gumb dok čekamo
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '...'; }
 
   // Loader
   const loadDiv = document.createElement('div');
   loadDiv.className = 'ai-b b';
-  loadDiv.innerHTML = '<div class="spinner"></div>';
+  loadDiv.innerHTML = '<div class="spinner" style="display:inline-block"></div> <span style="color:#7d8590;font-size:10px">Claude razmišlja...</span>';
   msgs.appendChild(loadDiv);
   msgs.scrollTop = msgs.scrollHeight;
 
-  // Poziv Apps Script backend (AI chat akcija)
   try {
     const res = await API.call('aiChat', {
-      history: _ai_history.slice(-10), // zadnjih 10 poruka
-      system: 'Ti si asistent za razvoj weberp-bj logističke aplikacije. ' +
-              'Koristiš Google Apps Script za backend i vanilla JS + HTML za frontend. ' +
-              'Aplikacija se zove weberp-bj i služi za upravljanje logistikom ' +
-              'prehrambene tvrtke (narudžbe, skladišta, prijevoz, plan proizvodnje). ' +
-              'Odgovaraj kratko i konkretno. Ako generiraš kod, koristi isti stil kao postojeći.'
+      history: _ai_history.slice(-10)
     });
+
     loadDiv.remove();
-    const odgovor = res.ok ? (res.data||res.msg||'Odgovor primljen.') : (res.error||'Greška pri obradi.');
+
+    const odgovor = res.ok
+      ? (res.data || 'Odgovor primljen.')
+      : ('⚠ ' + (res.error || 'Greška pri komunikaciji s AI-jem.'));
+
     const botDiv = document.createElement('div');
     botDiv.className = 'ai-b b';
     botDiv.style.whiteSpace = 'pre-wrap';
     botDiv.textContent = odgovor;
     msgs.appendChild(botDiv);
-    _ai_history.push({role:'assistant', content:odgovor});
+
+    if (res.ok) {
+      _ai_history.push({ role: 'assistant', content: odgovor });
+    }
+
   } catch(e) {
     loadDiv.remove();
     const errDiv = document.createElement('div');
     errDiv.className = 'ai-b b';
     errDiv.style.color = '#f85149';
-    errDiv.textContent = 'Greška: ' + e.message + ' · Provjeri da li je AI Chat akcija implementirana u Apps Script.';
+    errDiv.textContent = '⚠ Greška: ' + e.message;
     msgs.appendChild(errDiv);
+  } finally {
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Pošalji'; }
+    msgs.scrollTop = msgs.scrollHeight;
+    input?.focus();
   }
-  msgs.scrollTop = msgs.scrollHeight;
 }
 
 async function aktivirajVer(id) {
-  if (!confirm('Aktivirati ovu verziju? Sve ostale verzije bit će deaktivirane.')) return;
+  if (!confirm('Aktivirati ovu verziju? Sve ostale bit će deaktivirane.')) return;
   const res = await API.aktivirajVerziju(id);
   if (res.ok) { toast('Verzija aktivirana!','success'); await renderAI(); }
   else toast(res.error,'error');
@@ -439,9 +455,11 @@ async function aktivirajVer(id) {
 function openDodajVer() {
   document.getElementById('modal-content').innerHTML = `
     <div class="modal-title">Dodaj novu verziju</div>
-    <div class="form-group" style="margin-bottom:10px"><label>Naziv verzije *</label>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Naziv verzije *</label>
       <input type="text" id="ver-naziv" placeholder="npr. v2.1"></div>
-    <div class="form-group" style="margin-bottom:10px"><label>Opis</label>
+    <div class="form-group" style="margin-bottom:10px">
+      <label>Opis</label>
       <textarea id="ver-opis" placeholder="Što je novo u ovoj verziji..."></textarea></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal()">Odustani</button>
@@ -454,7 +472,7 @@ async function spremiVer() {
   const naziv = document.getElementById('ver-naziv').value.trim();
   const opis  = document.getElementById('ver-opis').value.trim();
   if (!naziv) { toast('Naziv je obavezan!','error'); return; }
-  const res = await API.addVerzija({naziv, opis});
+  const res = await API.addVerzija({ naziv, opis });
   if (res.ok) { toast(res.msg,'success'); closeModal(); await renderAI(); }
   else toast(res.error,'error');
 }
@@ -469,24 +487,24 @@ function renderPostavke() {
   <div class="g2">
     <div class="card">
       <div class="card-title">🔒 Promjena lozinke</div>
-      <div class="form-group" style="margin-bottom:10px"><label>Stara lozinka</label>
-        <input type="password" id="set-stara"></div>
-      <div class="form-group" style="margin-bottom:10px"><label>Nova lozinka</label>
-        <input type="password" id="set-nova"></div>
-      <div class="form-group" style="margin-bottom:14px"><label>Potvrdi novu lozinku</label>
-        <input type="password" id="set-nova2"></div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label>Stara lozinka</label><input type="password" id="set-stara"></div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label>Nova lozinka</label><input type="password" id="set-nova"></div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Potvrdi novu lozinku</label><input type="password" id="set-nova2"></div>
       <button class="btn btn-primary" onclick="promijeniLozinku()">Promijeni lozinku</button>
     </div>
     <div class="card">
       <div class="card-title">ℹ️ Informacije o aplikaciji</div>
       <div style="font-size:12px;color:#7d8590;line-height:2.2">
-        <div>Aplikacija: <b style="color:#e6edf3">weberp-bj v2.0</b></div>
+        <div>Aplikacija: <b style="color:#e6edf3">weberp-bj v2.1</b></div>
         <div>Korisnik: <b style="color:#e6edf3">${user?.USERNAME}</b></div>
         <div>Ime: <b style="color:#e6edf3">${user?.IME_PREZIME||'—'}</b></div>
         <div>Uloga: <b style="color:#58a6ff">${user?.ULOGA}</b></div>
         <div>Email: <b style="color:#e6edf3">${user?.EMAIL||'—'}</b></div>
         <div>Baza: <b style="color:#e6edf3">Google Sheets</b></div>
-        <div>Backend: <b style="color:#e6edf3">Google Apps Script</b></div>
+        <div>Backend: <b style="color:#e6edf3">Google Apps Script + Claude AI</b></div>
       </div>
       <div style="margin-top:12px">
         <button class="btn btn-secondary btn-sm" onclick="location.reload()">🔄 Osvježi aplikaciju</button>
