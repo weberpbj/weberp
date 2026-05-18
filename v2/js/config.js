@@ -5,7 +5,7 @@ var WEBERP_CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbxh6R-agYICMnbGuDcyA4eFU7OKIizFXXuVDg32BI_uzf5wuedqcFxQnTzXWUb4N7Fkmw/exec',
 
   // ── v2.0 TEST (novi Apps Script deployment URL — upiši kada deployas) ──
-  API_URL_V2: 'https://script.google.com/macros/s/AKfycbxh6R-agYICMnbGuDcyA4eFU7OKIizFXXuVDg32Bl_uzf5wuedqcFxQnTzXW.../exec',
+  API_URL_V2: 'https://script.google.com/macros/s/AKfycbxh6R-agYICMnbGuDcyA4eFU7OKIizFXXuVDg32BI_uzf5wuedqcFxQnTzXWUb4N7Fkmw/exec',
 
   APP_NAME:  'weberp-bj',
   APP_VER:   'v2.0',
