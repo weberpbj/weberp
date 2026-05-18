@@ -648,7 +648,14 @@ function openStvarnoModal(datum) {
 async function spremiStvarno(datum) {
   const sif = appState.sifrarnici||{};
   const art = (sif.artikli||[]).filter(a=>a.AKTIVAN==='Da');
-  const data = { DATUM: datum };
+ const d = new Date(datum + 'T12:00:00');
+const DANI_MAP = {0:'NED',1:'PON',2:'UTO',3:'SRI',4:'ČET',5:'PET',6:'SUB'};
+const data = {
+  DATUM:  datum,
+  DAN:    DANI_MAP[d.getDay()],
+  TJEDAN: getISOWeek(d),
+  MJESEC: d.getMonth() + 1
+};
   let uk=0;
   art.forEach(a=>{const v=parseInt(document.getElementById('s-'+a.KOD.replace(/[\/ ]/g,'_'))?.value||0); data[a.KOD+'_STVAR']=v; uk+=v;});
   data.STVAR_UKUPNO=uk;
