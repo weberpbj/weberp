@@ -2,7 +2,7 @@
 // VAŽNO: nakon deploymenta novog Apps Scripta, ažuriraj API_URL_V2
 var WEBERP_CONFIG = {
   // ── PRODUKCIJA (v1 - ne dirati) ──
-  API_URL: 'https://script.google.com/macros/s/AKfycbxh6R-agYICMnbGuDcyA4eFU7OKIizFXXuVDg32BI_uzf5wuedqcFxQnTzXWUb4N7Fkmw/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbx_N97C9AKyBQzn3v3f8OAHBbYayBnEbYyzuH0aOIQ6TSUAP0oUrv2Z3IhhondBmrQ5Ww/exec',
 
   // ── v2.0 TEST (novi Apps Script deployment URL — upiši kada deployas) ──
   API_URL_V2: 'https://script.google.com/macros/s/AKfycbxh6R-agYICMnbGuDcyA4eFU7OKIizFXXuVDg32BI_uzf5wuedqcFxQnTzXWUb4N7Fkmw/exec',
