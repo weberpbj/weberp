@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>weberp-bj v3.0</title>
+<script src="js/config.js"></script>
+<script src="js/api_v2.js"></script>
+<script src="js/auth_v2.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+
+/* ── Layout ── */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.header{background:#161b22;border-bottom:1px solid #30363d;padding:0 14px;
+  display:flex;align-items:center;gap:10px;height:50px;position:sticky;top:0;z-index:100;flex-shrink:0}
+.header-brand{font-size:14px;font-weight:800}.header-brand span{color:#58a6ff}
+.header-kpi{display:flex;gap:4px;margin-left:8px}
+.hkpi{background:#1c2128;border:1px solid #30363d;border-radius:4px;padding:2px 7px;
+  font-size:10px;text-align:center;border-left:3px solid #30363d}
+.hkpi .hv{font-weight:700;font-size:11px}
+.header-user{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:#7d8590}
+.header-user b{color:#e6edf3}
+.ver-badge{font-size:9px;background:#21262d;border:1px solid #30363d;border-radius:10px;padding:1px 7px;color:#7d8590}
+.btn-odjava{background:transparent;border:1px solid #30363d;color:#7d8590;border-radius:5px;
+  padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit}
+.btn-odjava:hover{border-color:#f85149;color:#f85149}
+.alarm-badge{background:#f85149;color:#fff;border-radius:50%;min-width:17px;height:17px;
+  font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;margin-left:3px}
+.novo-badge{background:#238636;color:#fff;border-radius:10px;padding:1px 5px;font-size:8px;font-weight:700;margin-left:auto}
+.body{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:190px;background:#161b22;border-right:1px solid #30363d;flex-shrink:0;overflow-y:auto;padding-bottom:20px}
+.nav-grp{padding:8px 0 0}
+.nav-grp-label{font-size:9px;font-weight:700;color:#484f58;text-transform:uppercase;letter-spacing:.08em;padding:4px 12px}
+.nav-btn{display:flex;align-items:center;gap:7px;width:100%;background:transparent;border:none;
+  border-left:3px solid transparent;color:#7d8590;padding:8px 12px;text-align:left;cursor:pointer;
+  font-family:inherit;font-size:12px;transition:all .1s}
+.nav-btn:hover{background:#21262d;color:#e6edf3}
+.nav-btn.active{background:#21262d;border-left-color:#58a6ff;color:#e6edf3;font-weight:600}
+.main{flex:1;overflow-y:auto;padding:18px}
+
+/* ── Cards ── */
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;margin-bottom:14px}
+.card-title{font-size:10px;font-weight:700;color:#7d8590;text-transform:uppercase;
+  letter-spacing:.06em;padding-bottom:7px;margin-bottom:10px;border-bottom:1px solid #30363d}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+
+/* ── KPI ── */
+.kpi{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 14px}
+.kpi-label{font-size:10px;color:#7d8590;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.kpi-val{font-size:24px;font-weight:800;line-height:1}
+.kpi-sub{font-size:10px;color:#7d8590;margin-top:3px}
+
+/* ── Tags ── */
+.tag{display:inline-block;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600;white-space:nowrap;border:1px solid transparent}
+.tag-blue{background:#58a6ff22;color:#58a6ff;border-color:#58a6ff44}
+.tag-green{background:#3fb95022;color:#3fb950;border-color:#3fb95044}
+.tag-red{background:#f8514922;color:#f85149;border-color:#f8514944}
+.tag-yellow{background:#e3b34122;color:#e3b341;border-color:#e3b34144}
+.tag-purple{background:#bc8cff22;color:#bc8cff;border-color:#bc8cff44}
+.tag-orange{background:#ffa65722;color:#ffa657;border-color:#ffa65744}
+
+/* ── Gumbi ── */
+.btn{border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid transparent;transition:all .1s}
+.btn-primary{background:#1f6feb;color:#fff;border-color:#1f6feb}.btn-primary:hover{background:#388bfd}
+.btn-success{background:#238636;color:#fff;border-color:#238636}.btn-success:hover{background:#2ea043}
+.btn-danger{background:#da3633;color:#fff;border-color:#da3633}.btn-danger:hover{background:#f85149}
+.btn-secondary{background:#21262d;color:#e6edf3;border-color:#30363d}.btn-secondary:hover{border-color:#58a6ff;color:#58a6ff}
+.btn-orange{background:#7d2700;color:#ffa657;border-color:#ffa65744}.btn-orange:hover{border-color:#ffa657}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Forme ── */
+.form-row{display:grid;gap:10px;margin-bottom:10px}
+.form-row.col2{grid-template-columns:1fr 1fr}
+.form-row.col3{grid-template-columns:1fr 1fr 1fr}
+.form-group label{display:block;font-size:10px;font-weight:600;color:#7d8590;
+  text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;
+  color:#e6edf3;padding:8px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#58a6ff}
+.form-group select option{background:#161b22}
+.form-group textarea{resize:vertical;min-height:70px}
+
+/* ── Tablica ── */
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid #30363d}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:#1c2128}
+th{padding:8px 10px;text-align:left;color:#7d8590;font-weight:600;font-size:10px;white-space:nowrap;border-bottom:1px solid #30363d}
+td{padding:6px 10px;border-bottom:1px solid #30363d22;vertical-align:middle}
+tr:nth-child(even) td{background:#1c212822}
+tr:hover td{background:#21262d55}
+.tbl-empty{text-align:center;color:#7d8590;font-style:italic;padding:28px}
+
+/* ── Filteri ── */
+.filters{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.filter-input{background:#21262d;border:1px solid #30363d;border-radius:6px;
+  color:#e6edf3;padding:6px 10px;font-size:12px;outline:none;font-family:inherit}
+.filter-btn{background:#21262d;border:1px solid #30363d;color:#7d8590;border-radius:6px;
+  padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.filter-btn:hover{border-color:#7d8590;color:#e6edf3}
+.filter-btn.active{background:#1f3a5f;border-color:#58a6ff;color:#58a6ff;font-weight:700}
+.filters-count{font-size:12px;color:#7d8590;margin-left:auto}
+
+/* ── Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:#000a;z-index:200;
+  align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:22px;
+  max-width:640px;width:100%;max-height:90vh;overflow-y:auto;position:relative}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:18px}
+.modal-close{position:absolute;top:12px;right:12px;background:#21262d;border:1px solid #30363d;
+  color:#7d8590;border-radius:5px;padding:3px 9px;cursor:pointer;font-family:inherit}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #30363d}
+
+/* ── Bar ── */
+.bar-wrap{margin-bottom:8px}
+.bar-header{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.bar-track{background:#21262d;border-radius:3px;height:7px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .3s}
+
+/* ── Toast ── */
+.toast-container{position:fixed;bottom:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 14px;
+  font-size:12px;animation:fadeIn .2s;min-width:220px;max-width:340px}
+.toast.success{border-color:#3fb950;color:#3fb950}
+.toast.error{border-color:#f85149;color:#f85149}
+.toast.info{border-color:#58a6ff;color:#58a6ff}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Spinner ── */
+.spinner{display:inline-block;width:15px;height:15px;border:2px solid #30363d;
+  border-top-color:#58a6ff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-box{display:flex;align-items:center;gap:10px;padding:20px;color:#7d8590}
+
+/* ── Kalendar Excel-style ── */
+.kal-outer{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.kal-tbl{border-collapse:collapse;font-size:10px;min-width:max-content}
+.kal-tbl .rl{background:#1c2128;color:#7d8590;font-weight:700;font-size:9px;text-transform:uppercase;
+  padding:3px 8px;border:1px solid #30363d;white-space:nowrap;
+  position:sticky;left:0;z-index:5;min-width:68px}
+.dh{background:#1a2744;border:1px solid #2d4a7a;color:#58a6ff;font-weight:800;font-size:10px;padding:4px 8px;text-align:center}
+.dh.sub{background:#0d2a0d;color:#3fb950}
+.dh.tod{background:#2a2010;color:#e3b341;border-color:#5a4010}
+.sh{background:#1c1c2e;color:#bc8cff;font-weight:700;font-size:9px;padding:3px 5px;border:1px solid #3d3060;text-align:center}
+.sv{background:#1a1a2e22;border:1px solid #30363d;color:#bc8cff;font-weight:700;text-align:center;padding:3px 4px;font-size:10px}
+.nh{background:#1c2128;border:1px solid #30363d;padding:3px 5px;text-align:center;min-width:88px;max-width:120px}
+.nh .nc{font-weight:700;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nh .nb{font-size:8px;color:#484f58}
+.av{border:1px solid #30363d22;text-align:right;padding:2px 4px;font-size:10px;background:#0d1117}
+.av.hv{background:#1f3a5f22;color:#58a6ff;font-weight:700;border-color:#30363d}
+.av.zr{color:#484f58}
+.uh{background:#0d2a0d;border:1px solid #3fb95033;color:#3fb950;font-weight:700;font-size:9px;padding:3px 5px;text-align:center}
+.uv{background:#0d2a0d22;border:1px solid #3fb95022;color:#3fb950;font-weight:700;text-align:right;padding:2px 4px;font-size:10px}
+.ph{background:#2a1a0d;border:1px solid #ffa65733;color:#ffa657;font-weight:700;font-size:9px;padding:3px 5px;text-align:center}
+.pv{background:#2a1a0d22;border:1px solid #ffa65722;color:#ffa657;font-weight:700;text-align:right;padding:2px 4px;font-size:10px}
+.tl{background:#0d2a0d;color:#3fb950;font-weight:800;font-size:9px;text-transform:uppercase;
+  padding:4px 8px;border:1px solid #3fb95033;position:sticky;left:0;z-index:5}
+.tv2{background:#0d2a0d22;border:1px solid #3fb95022;color:#3fb950;font-weight:800;text-align:right;padding:4px 4px;font-size:10px}
+.mr td{background:#161b22;font-size:9px;color:#7d8590;padding:2px 4px;border:1px solid #30363d22;font-style:italic;text-align:center}
+.ar td{background:#0d1117}
+
+/* ── Projekcija ── */
+.proj-day{background:#161b22;border:1px solid #30363d;border-radius:7px;overflow:hidden;margin-bottom:0}
+.proj-dh{padding:7px 9px;font-weight:800;font-size:11px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d}
+.proj-dh.wd{background:#1f3a5f22;color:#58a6ff}
+.proj-dh.wk{background:#0d2a0d22;color:#3fb950}
+.proj-sec{padding:7px 9px;border-bottom:1px solid #30363d22;font-size:10px}
+.proj-sl{font-size:9px;color:#7d8590;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+.proj-item{display:flex;justify-content:space-between;padding:2px 0;font-size:10px}
+.pbar{background:#21262d;border-radius:2px;height:4px;margin-top:3px;overflow:hidden}
+.pbar-f{height:100%;border-radius:2px}
+
+/* ── AI ── */
+.ai-chat{display:flex;flex-direction:column;height:370px}
+.ai-msgs{flex:1;overflow-y:auto;padding:4px 0;display:flex;flex-direction:column;gap:6px}
+.ai-b{padding:8px 11px;border-radius:6px;font-size:11px;line-height:1.55;max-width:88%}
+.ai-b.u{background:#1f3a5f;border:1px solid #58a6ff44;align-self:flex-end}
+.ai-b.b{background:#21262d;border:1px solid #30363d;align-self:flex-start}
+.ai-row{display:flex;gap:6px;margin-top:8px;border-top:1px solid #30363d;padding-top:8px}
+.ai-in{flex:1;background:#21262d;border:1px solid #30363d;border-radius:5px;color:#e6edf3;
+  padding:7px 10px;font-size:11px;font-family:inherit;outline:none}
+.ai-in:focus{border-color:#58a6ff}
+
+/* ── Korisnici prava checkboxi ── */
+.prava-tbl th,.prava-tbl td{padding:5px 8px;border-bottom:1px solid #30363d22;font-size:11px;text-align:center}
+.prava-tbl th{background:#1c2128;color:#7d8590;font-size:10px;font-weight:600}
+.prava-tbl td:first-child{text-align:left}
+.pchk{accent-color:#58a6ff;width:14px;height:14px;cursor:pointer}
+
+/* ── Vozač ── */
+.vozac-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;margin-bottom:10px}
+.vozac-kupac{font-size:15px;font-weight:700;margin-bottom:3px}
+.vozac-info{font-size:11px;color:#7d8590;margin-bottom:8px}
+.vozac-btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .sidebar{display:none}
+  .sidebar.open{display:block;position:fixed;inset:0;z-index:150;width:190px}
+  .g2,.g3,.g4,.g5,.g6{grid-template-columns:1fr}
+  .form-row.col2,.form-row.col3{grid-template-columns:1fr}
+  .main{padding:12px}
+  #menu-toggle{display:block!important}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="header">
+    <button id="menu-toggle" style="background:none;border:none;color:#7d8590;font-size:18px;cursor:pointer;display:none" onclick="toggleSidebar()">☰</button>
+    <div class="header-brand">🚛 <span>weberp</span>-bj</div>
+    <div class="ver-badge">v3.0</div>
+    <div class="header-kpi" id="header-kpi" style="margin-left:10px"></div>
+    <div class="header-user">
+      <span id="header-user-info"></span>
+      <button class="btn-odjava" onclick="AUTH.odjava()">Odjava</button>
+    </div>
+  </header>
+  <div class="body">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" id="main-content">
+      <div class="loading-box"><div class="spinner"></div><span>Učitavanje...</span></div>
+    </main>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script src="js/views_main.js"></script>
+<script src="js/views_ops.js"></script>
+<script src="js/views_admin.js"></script>
+<script>
+// ── Globalne konstante i stanje ──
+const ARTIKLI = ['BK','BS','BB','PANJ','MCD','VITEZ','LAN','5 ZIT','BR/TK','BAG','š5-ŽIT','BH','PINCE','KCZ','MAĐARICA'];
+const MJECI   = ['','Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'];
+
+let currentView = null;
+let appState    = { sifrarnici: null, alarmi_count: 0 };
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!AUTH.provjeriPristup()) return;
+  const user = AUTH.getUser();
+  document.getElementById('header-user-info').innerHTML =
+    `<b>${user.IME_PREZIME || user.USERNAME}</b>&nbsp;·&nbsp;<span style="color:#7d8590">${ulogaLabel(user.ULOGA)}</span>`;
+  if (window.innerWidth <= 900) document.getElementById('menu-toggle').style.display = 'block';
+  renderSidebar();
+  await loadSifrarnici();
+  await loadAlarmCount();
+  loadHeaderKPI();
+  const podmape = AUTH.vidljivePodmape();
+  if (podmape.length > 0) showView(podmape[0].id);
+});
+
+function ulogaLabel(u) {
+  const m = {superuser:'🔑 Superuser',admin_priprema:'📋 Admin Priprema',admin_maticni:'📦 Admin Matični',
+    admin_proizvodnja:'🏭 Admin Proizvodnja',uprava:'👔 Uprava',prodaja:'📈 Prodaja',
+    korisnik_proizvodnja:'🏭 Proizvodnja',vozac:'🚛 Vozač',ldc_skladiste:'🏪 LDC Skladište'};
+  return m[u] || u;
+}
+
+async function loadSifrarnici() {
+  const res = await API.getSifrarnici();
+  if (res.ok) appState.sifrarnici = res.data;
+}
+
+async function loadAlarmCount() {
+  if (!AUTH.imaOvlast('alarmi')) return;
+  const res = await API.getAlarmi('Otvoren');
+  if (res.ok) { appState.alarmi_count = res.total || 0; renderSidebar(); }
+}
+
+async function loadHeaderKPI() {
+  document.getElementById('header-kpi').innerHTML = `
+    <div class="hkpi" style="border-left-color:#6366f1">
+      <div style="color:#7d8590;font-size:8px">LDC FRIGO</div>
+      <div class="hv" id="hkpi-frigo" style="color:#6366f1">—/400</div></div>
+    <div class="hkpi" style="border-left-color:#8b5cf6">
+      <div style="color:#7d8590;font-size:8px">LDC MARI</div>
+      <div class="hv" id="hkpi-mari" style="color:#8b5cf6">—/240</div></div>`;
+  try {
+    const [rF, rM] = await Promise.all([API.getSkladiste('LDC FRIGO'), API.getSkladiste('LDC MARI')]);
+    if (rF.ok) {
+      const pct = Math.round(rF.data.trenutno / rF.data.kapacitet * 100);
+      const c = pct>85?'#f85149':pct>70?'#ffa657':'#6366f1';
+      document.getElementById('hkpi-frigo').style.color = c;
+      document.getElementById('hkpi-frigo').textContent = `${rF.data.trenutno}/400`;
+    }
+    if (rM.ok) {
+      const pct = Math.round(rM.data.trenutno / rM.data.kapacitet * 100);
+      const c = pct>85?'#f85149':pct>70?'#ffa657':'#8b5cf6';
+      document.getElementById('hkpi-mari').style.color = c;
+      document.getElementById('hkpi-mari').textContent = `${rM.data.trenutno}/240`;
+    }
+  } catch(e) {}
+}
+
+function renderSidebar() {
+  const podmape = AUTH.vidljivePodmape();
+  const grupe = {};
+  podmape.forEach(p => { if (!grupe[p.grp]) grupe[p.grp] = []; grupe[p.grp].push(p); });
+  document.getElementById('sidebar').innerHTML = Object.entries(grupe).map(([grp, items]) => `
+    <div class="nav-grp">
+      <div class="nav-grp-label">${grp}</div>
+      ${items.map(p => {
+        const badge = p.id==='alarmi' && appState.alarmi_count>0
+          ? `<span class="alarm-badge">${appState.alarmi_count}</span>` : '';
+        const novo = p.novo ? `<span class="novo-badge">NOVO</span>` : '';
+        return `<button class="nav-btn ${currentView===p.id?'active':''}"
+          onclick="showView('${p.id}');closeSidebar()">
+          <span>${p.icon}</span>${p.label}${badge}${novo}</button>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); }
+
+// ── Router ──
+async function showView(id) {
+  currentView = id; renderSidebar();
+  const main = document.getElementById('main-content');
+  main.innerHTML = '<div class="loading-box"><div class="spinner"></div><span style="color:#7d8590">Učitavanje...</span></div>';
+  try {
+    switch(id) {
+      case 'dashboard':    await renderDashboard();       break;
+      case 'kalendar':     await renderKalendar();        break;
+      case 'priprema':     await renderPriprema();        break;
+      case 'vozac':        await renderVozac();           break;
+      case 'plan_proizv':  await renderPlanProizvodnje(); break;
+      case 'plan_prodaje': await renderPlanProdaje();     break;
+      case 'prijevoz':     await renderPrijevoz();        break;
+      case 'skladista':    await renderSkladista();       break;
+      case 'projekcija':   await renderProjekcija();      break;
+      case 'izvjestaji':   await renderIzvjestaji();      break;
+      case 'alarmi':       await renderAlarmi();          break;
+      case 'maticni':      await renderMaticni();         break;
+      case 'korisnici':    await renderKorisnici();       break;
+      case 'ai':           await renderAI();              break;
+      case 'postavke':     renderPostavke();              break;
+      default: main.innerHTML = '<div class="card" style="color:#7d8590">Podmapa u pripremi.</div>';
+    }
+  } catch(e) {
+    main.innerHTML = `<div class="card" style="color:#f85149">⚠ Greška: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+// ── Helpers (globalni, koriste ih svi views) ──
+function kpi(label, val, sub, color) {
+  return `<div class="kpi"><div class="kpi-label">${label}</div>
+    <div class="kpi-val" style="color:${color}">${val??'—'}</div>
+    <div class="kpi-sub">${sub}</div></div>`;
+}
+
+function fmt_datum(d) {
+  if (!d) return '—';
+  try {
+    const dt = new Date(String(d).length===10 ? d+'T12:00:00' : d);
+    return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()}`;
+  } catch { return d; }
+}
+
+function err(msg) {
+  return `<div class="card" style="color:#f85149;border-color:#f8514944">⚠ ${msg||'Greška pri učitavanju.'}</div>`;
+}
+
+function toast(msg, type='info', dur=3500) {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = (type==='success'?'✅ ':type==='error'?'❌ ':'ℹ️ ') + msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
+
+function openModal()  { document.getElementById('modal-overlay').classList.add('open'); }
+function closeModal(e) {
+  if (!e || e.target===document.getElementById('modal-overlay'))
+    document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+</script>
+</body>
+</html>
